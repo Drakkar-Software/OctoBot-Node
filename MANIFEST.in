@@ -1,0 +1,3 @@
+# Include dist folder for frontend assets in the package
+recursive-include octobot_node/ui/dist *
+
