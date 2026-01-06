@@ -30,6 +30,7 @@ def ping() -> str:
     # TODO remove (test only)
     timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
     logger.info("Ping task executed at %s", timestamp)
+    # time.sleep(200)
     # SCHEDULER.save_data("ping:result", "pong at " + timestamp)
     return {"task_id": timestamp, "status": "done"}
 
