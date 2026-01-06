@@ -8,6 +8,8 @@
 <em>Run any OctoBot, anywhere, with ease</em>
 </p>
 
+This project is related to [OctoBot](https://github.com/Drakkar-Software/OctoBot).
+
 ## Usage
 
 *Work in progress*
@@ -20,7 +22,7 @@ docker run -p 6379:6379 --name redis -d redis redis-server --save 60 1 --logleve
 ## Developers
 ### Prerequisites
 
-Before proceeding, ensure you have **Python 3.10+** and **Node.js 20+** installed on your system.
+Before proceeding, ensure you have [**Python 3.10+**](https://www.python.org) and [**Node.js 20+**](https://nodejs.org) installed on your system.
 
 Once you have installed Python and Node.js, run the following commands:
 ```bash
@@ -31,7 +33,7 @@ cp .env.sample .env
 
 ### Web UI
 
-The Web UI can be used in two modes: **static** and **dynamic (development)**.
+The Web UI can be used in two modes: **static** and **dynamic (development)**. The Web UI is built using [React](https://github.com/facebook/react), [Vite](https://github.com/vitejs/vite), [TanStack](https://github.com/TanStack) and [shadcn-ui](https://github.com/shadcn-ui/ui).
 
 #### Static Web UI
 
@@ -54,14 +56,14 @@ For API integration during development, make sure your FastAPI backend server is
 
 ### OpenAPI
 
-Whenever you update or add routes in `octobot_node/app/api`, you need to regenerate the OpenAPI specification and the UI OpenAPI client. This can be done easily with the provided script:
+Whenever you update or add routes in `octobot_node/app/api`, you need to regenerate the [OpenAPI specification](https://github.com/OAI/OpenAPI-Specification) and the UI OpenAPI client. This can be done easily with the provided script:
 ```bash
 bash ./generate-client.sh
 ```
 
 ### API Server
 
-The API server is built using [FastAPI](https://fastapi.tiangolo.com/) and provides the backend REST endpoints and websocket interface for OctoBot Node.
+The API server is built using [FastAPI](https://github.com/fastapi) and provides the backend REST endpoints and websocket interface for OctoBot Node.
 
 #### Running the FastAPI Server
 
@@ -89,7 +91,7 @@ See `.env.sample` for all options, and adjust as needed.
 
 #### Scheduler
 
-The task scheduler is automatically started together with the FastAPI server through import of the `octobot_node/app/scheduler` module.
+The task scheduler is automatically started together with the FastAPI server through import of the `octobot_node/app/scheduler` module. The scheduler uses [Huey](https://github.com/coleifer/huey) for task queue management.
 
 - **No manual launch needed** — scheduler and consumers are managed by the FastAPI app on startup.
 - Configuration for the scheduler backend (Redis or SQLite) is picked up from environment variables.
