@@ -15,6 +15,7 @@
 #  License along with OctoBot. If not, see <https://www.gnu.org/licenses/>.
 
 import uuid
+import typing
 import datetime
 from enum import Enum
 
@@ -34,8 +35,6 @@ class User(UserBase):
 
 
 class TaskStatus(str, Enum):
-    """Task status enumeration."""
-
     PENDING = "pending"
     SCHEDULED = "scheduled"
     PERIODIC = "periodic"
@@ -44,28 +43,26 @@ class TaskStatus(str, Enum):
     FAILED = "failed"
 
 
+class TaskType(str, Enum):
+    START_OCTOBOT = "start_octobot"
+    EXECUTE_ACTIONS = "execute_actions"
+    STOP_OCTOBOT = "stop_octobot"
+
 class Task(BaseModel):
-    id: uuid.UUID
-    name: str
-    description: str
-    status: TaskStatus
-    retries: int = 0
-    expires_at: datetime.datetime | None = None
-    scheduled_at: datetime.datetime | None = None
-    started_at: datetime.datetime | None = None
-    completed_at: datetime.datetime | None = None
-
-class TaskCreate(BaseModel):
-    name: str
-    description: str
-
-class TaskUpdate(BaseModel):
-    name: str
-    description: str
-
-class TaskDelete(Task):
-    id: uuid.UUID
-
+    id: uuid.UUID = uuid.uuid4()
+    name: typing.Optional[str] = None
+    description: typing.Optional[str] = None
+    content: typing.Optional[str] = None
+    type: typing.Optional[str] = None
+    status: typing.Optional[TaskStatus] = None
+    retries: typing.Optional[int] = 0
+    retry_delay: typing.Optional[int] = 0
+    priority: typing.Optional[int] = 0
+    expires: typing.Optional[datetime.datetime] = None
+    expires_resolved: typing.Optional[datetime.datetime] = None
+    scheduled_at: typing.Optional[datetime.datetime] = None
+    started_at: typing.Optional[datetime.datetime] = None
+    completed_at: typing.Optional[datetime.datetime] = None
 
 class Node(BaseModel):
     node_type: str

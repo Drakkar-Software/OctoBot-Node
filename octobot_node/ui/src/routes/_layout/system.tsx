@@ -8,7 +8,7 @@ export const Route = createFileRoute("/_layout/system")({
   head: () => ({
     meta: [
       {
-        title: "System - OctoBot Node",
+        title: "System",
       },
     ],
   }),

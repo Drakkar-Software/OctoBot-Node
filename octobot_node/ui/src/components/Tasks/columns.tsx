@@ -14,7 +14,7 @@ function StatusBadge({ status }: { status: Task["status"] }) {
     failed: { label: "Failed", className: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400" },
   }
 
-  const config = statusConfig[status]
+  const config = status ? statusConfig[status] : statusConfig.pending
 
   return (
     <span

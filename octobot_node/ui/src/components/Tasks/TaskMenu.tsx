@@ -25,7 +25,7 @@ export const TaskMenu = ({ task }: TaskMenuProps) => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DeleteTask id={task.id} onSuccess={() => setOpen(false)} />
+        <DeleteTask id={task.id!} onSuccess={() => setOpen(false)} />
       </DropdownMenuContent>
     </DropdownMenu>
   )

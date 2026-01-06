@@ -14,30 +14,53 @@
 #  You should have received a copy of the GNU General Public
 #  License along with OctoBot. If not, see <https://www.gnu.org/licenses/>.
 
-from __future__ import annotations
-
-import datetime
 import logging
+import json
+from typing import Optional
 
-from huey import crontab
 from octobot_node.scheduler import SCHEDULER
+from octobot_node.app.models import Task, TaskType
 
 logger = logging.getLogger(__name__)
 
 
-@SCHEDULER.INSTANCE.periodic_task(crontab(minute="*"))
-def ping() -> str:
-    # TODO remove (test only)
-    timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
-    logger.info("Ping task executed at %s", timestamp)
-    # time.sleep(200)
-    # SCHEDULER.save_data("ping:result", "pong at " + timestamp)
-    return {"task_id": timestamp, "status": "done"}
+
+@SCHEDULER.INSTANCE.task()
+def start_octobot(task: Task):
+    # TODO
+    return {"status": "done", "result": {}, "error": None}
 
 
 @SCHEDULER.INSTANCE.task()
-def ping_task() -> str:
-    # TODO remove (test only)
-    timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
-    logger.info("Ping task executed at %s", timestamp)
-    return {"task_id": timestamp, "status": "done"}
+def execute_octobot(task: Task):
+    decrypted_content = decrypt_content(task.content)
+
+    if task.type == TaskType.EXECUTE_ACTIONS.value:
+        # TODO start_octobot with actions
+        print(f"Executing actions with content: {decrypted_content}...")
+        return {"status": "done", "result": {}, "error": None}
+    else:
+        raise ValueError(f"Invalid task type: {type}")
+
+
+@SCHEDULER.INSTANCE.task()
+def stop_octobot(task: Task):
+    # TODO
+    return {"status": "done", "result": {}, "error": None}
+
+def decrypt_content(content: str) -> str:
+    # TODO
+    return content
+
+def trigger_task(task: Task) -> bool:
+    if task.type == TaskType.START_OCTOBOT.value:
+        start_octobot.schedule(args=[task], delay=1)
+        return True
+    elif task.type == TaskType.STOP_OCTOBOT.value:
+        stop_octobot.schedule(args=[task], delay=1)
+        return True
+    elif task.type == TaskType.EXECUTE_ACTIONS.value:
+        execute_octobot.schedule(args=[task], delay=1)
+        return True
+    else:
+        raise ValueError(f"Invalid task type: {task.type}")

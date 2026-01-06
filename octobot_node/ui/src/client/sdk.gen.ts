@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { ServeSpaAppRootResponse, ServeSpaAppData, ServeSpaAppResponse, LoginTestAuthResponse, NodesGetCurrentNodeResponse, TasksCreateTaskData, TasksCreateTaskResponse, TasksGetTasksData, TasksGetTasksResponse, TasksUpdateTaskData, TasksUpdateTaskResponse, TasksDeleteTaskData, TasksDeleteTaskResponse, TasksGetMetricsResponse, TasksTriggerPingResponse, UsersReadUserMeResponse } from './types.gen';
+import type { ServeSpaAppRootResponse, ServeSpaAppData, ServeSpaAppResponse, LoginTestAuthResponse, NodesGetCurrentNodeResponse, TasksCreateTasksData, TasksCreateTasksResponse, TasksGetTasksData, TasksGetTasksResponse, TasksUpdateTaskData, TasksUpdateTaskResponse, TasksDeleteTaskData, TasksDeleteTaskResponse, TasksGetMetricsResponse, UsersReadUserMeResponse } from './types.gen';
 
 export class DefaultService {
     /**
@@ -44,8 +44,6 @@ export class DefaultService {
 export class LoginService {
     /**
      * Test Auth
-     * Test basic auth credentials.
-     * Returns current user if authenticated.
      * @returns User Successful Response
      * @throws ApiError
      */
@@ -73,14 +71,13 @@ export class NodesService {
 
 export class TasksService {
     /**
-     * Create Task
-     * Create a new task.
+     * Create Tasks
      * @param data The data for the request.
      * @param data.requestBody
-     * @returns Task Successful Response
+     * @returns unknown Successful Response
      * @throws ApiError
      */
-    public static createTask(data: TasksCreateTaskData): CancelablePromise<TasksCreateTaskResponse> {
+    public static createTasks(data: TasksCreateTasksData): CancelablePromise<TasksCreateTasksResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/tasks/',
@@ -94,7 +91,6 @@ export class TasksService {
     
     /**
      * Get Tasks
-     * Get all tasks from scheduler.
      * @param data The data for the request.
      * @param data.page
      * @param data.limit
@@ -117,7 +113,6 @@ export class TasksService {
     
     /**
      * Update Task
-     * Update a task.
      * @param data The data for the request.
      * @param data.taskId
      * @param data.requestBody
@@ -141,10 +136,9 @@ export class TasksService {
     
     /**
      * Delete Task
-     * Delete a task.
      * @param data The data for the request.
      * @param data.taskId
-     * @returns TaskDelete Successful Response
+     * @returns string Successful Response
      * @throws ApiError
      */
     public static deleteTask(data: TasksDeleteTaskData): CancelablePromise<TasksDeleteTaskResponse> {
@@ -162,7 +156,6 @@ export class TasksService {
     
     /**
      * Get Metrics
-     * Get task metrics: pending, scheduled, and result counts.
      * @returns unknown Successful Response
      * @throws ApiError
      */
@@ -172,25 +165,11 @@ export class TasksService {
             url: '/api/v1/tasks/metrics'
         });
     }
-    
-    /**
-     * Trigger Ping
-     * Manually trigger the ping task for testing.
-     * @returns Task Successful Response
-     * @throws ApiError
-     */
-    public static triggerPing(): CancelablePromise<TasksTriggerPingResponse> {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/api/v1/tasks/ping'
-        });
-    }
 }
 
 export class UsersService {
     /**
      * Read User Me
-     * Get current user.
      * @returns User Successful Response
      * @throws ApiError
      */

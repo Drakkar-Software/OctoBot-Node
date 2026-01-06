@@ -5,7 +5,7 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import { type Task, TasksService, type TaskUpdate } from "@/client"
+import { type Task, TasksService } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -52,14 +52,14 @@ const EditTask = ({ task, onSuccess }: EditTaskProps) => {
     mode: "onBlur",
     criteriaMode: "all",
     defaultValues: {
-      name: task.name,
+      name: task.name ?? "",
       description: task.description ?? undefined,
     },
   })
 
   const mutation = useMutation({
-    mutationFn: (data: TaskUpdate) =>
-      TasksService.updateTask({ taskId: task.id, requestBody: data }),
+    mutationFn: (data: Task) =>
+      TasksService.updateTask({ taskId: task.id!, requestBody: data }),
     onSuccess: () => {
       showSuccessToast("Task updated successfully")
       setIsOpen(false)
@@ -72,7 +72,7 @@ const EditTask = ({ task, onSuccess }: EditTaskProps) => {
   })
 
   const onSubmit = (data: FormData) => {
-    mutation.mutate({ name: data.name, description: data.description ?? "" } as TaskUpdate)
+    mutation.mutate({ name: data.name, description: data.description ?? "" } as Task)
   }
 
   return (

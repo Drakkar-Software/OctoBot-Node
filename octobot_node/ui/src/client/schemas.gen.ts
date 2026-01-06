@@ -72,25 +72,100 @@ export const TaskSchema = {
         id: {
             type: 'string',
             format: 'uuid',
-            title: 'Id'
+            title: 'Id',
+            default: '516d630a-cba2-4450-b833-3d1d0694cde4'
         },
         name: {
-            type: 'string',
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             title: 'Name'
         },
         description: {
-            type: 'string',
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             title: 'Description'
         },
+        content: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Content'
+        },
+        type: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Type'
+        },
         status: {
-            '$ref': '#/components/schemas/TaskStatus'
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/TaskStatus'
+                },
+                {
+                    type: 'null'
+                }
+            ]
         },
         retries: {
-            type: 'integer',
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             title: 'Retries',
             default: 0
         },
-        expires_at: {
+        retry_delay: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Retry Delay',
+            default: 0
+        },
+        priority: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Priority',
+            default: 0
+        },
+        expires: {
             anyOf: [
                 {
                     type: 'string',
@@ -100,7 +175,19 @@ export const TaskSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Expires At'
+            title: 'Expires'
+        },
+        expires_resolved: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Expires Resolved'
         },
         scheduled_at: {
             anyOf: [
@@ -140,124 +227,13 @@ export const TaskSchema = {
         }
     },
     type: 'object',
-    required: ['id', 'name', 'description', 'status'],
     title: 'Task'
-} as const;
-
-export const TaskCreateSchema = {
-    properties: {
-        name: {
-            type: 'string',
-            title: 'Name'
-        },
-        description: {
-            type: 'string',
-            title: 'Description'
-        }
-    },
-    type: 'object',
-    required: ['name', 'description'],
-    title: 'TaskCreate'
-} as const;
-
-export const TaskDeleteSchema = {
-    properties: {
-        id: {
-            type: 'string',
-            format: 'uuid',
-            title: 'Id'
-        },
-        name: {
-            type: 'string',
-            title: 'Name'
-        },
-        description: {
-            type: 'string',
-            title: 'Description'
-        },
-        status: {
-            '$ref': '#/components/schemas/TaskStatus'
-        },
-        retries: {
-            type: 'integer',
-            title: 'Retries',
-            default: 0
-        },
-        expires_at: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'date-time'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Expires At'
-        },
-        scheduled_at: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'date-time'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Scheduled At'
-        },
-        started_at: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'date-time'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Started At'
-        },
-        completed_at: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'date-time'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Completed At'
-        }
-    },
-    type: 'object',
-    required: ['id', 'name', 'description', 'status'],
-    title: 'TaskDelete'
 } as const;
 
 export const TaskStatusSchema = {
     type: 'string',
     enum: ['pending', 'scheduled', 'periodic', 'running', 'completed', 'failed'],
-    title: 'TaskStatus',
-    description: 'Task status enumeration.'
-} as const;
-
-export const TaskUpdateSchema = {
-    properties: {
-        name: {
-            type: 'string',
-            title: 'Name'
-        },
-        description: {
-            type: 'string',
-            title: 'Description'
-        }
-    },
-    type: 'object',
-    required: ['name', 'description'],
-    title: 'TaskUpdate'
+    title: 'TaskStatus'
 } as const;
 
 export const UserSchema = {
