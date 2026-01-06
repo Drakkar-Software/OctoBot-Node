@@ -1,6 +1,5 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
 
-import { Footer } from "@/components/Common/Footer"
 import AppSidebar from "@/components/Sidebar/AppSidebar"
 import {
   SidebarInset,
@@ -33,7 +32,6 @@ function Layout() {
             <Outlet />
           </div>
         </main>
-        <Footer />
       </SidebarInset>
     </SidebarProvider>
   )
