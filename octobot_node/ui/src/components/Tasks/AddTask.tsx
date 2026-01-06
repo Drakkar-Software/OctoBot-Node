@@ -5,7 +5,7 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import { type TaskCreate, TasksService } from "@/client"
+import { type Task, TasksService } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -53,8 +53,8 @@ const AddTask = () => {
   })
 
   const mutation = useMutation({
-    mutationFn: (data: TaskCreate) =>
-      TasksService.createTask({ requestBody: data }),
+    mutationFn: (data: Task) =>
+      TasksService.createTasks({ requestBody: [data] as Array<Task> }),
     onSuccess: () => {
       showSuccessToast("Task created successfully")
       form.reset()
@@ -67,14 +67,14 @@ const AddTask = () => {
   })
 
   const onSubmit = (data: FormData) => {
-    mutation.mutate({ name: data.name, description: data.description ?? "" } as TaskCreate)
+    mutation.mutate({ name: data.name, description: data.description ?? "" } as Task)
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button className="my-4">
-          <Plus className="mr-2" />
+        <Button className="my-4" disabled>
+          <Plus />
           Add Task
         </Button>
       </DialogTrigger>

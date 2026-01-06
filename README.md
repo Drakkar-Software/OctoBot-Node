@@ -12,9 +12,55 @@ This project is related to [OctoBot](https://github.com/Drakkar-Software/OctoBot
 
 ## Usage
 
-*Work in progress*
+### CLI
 
-### With redis
+OctoBot-Node provides a command-line interface (CLI) for starting the server and managing the application.
+
+#### Basic Usage
+
+Start the server with default settings:
+```bash
+python start.py
+```
+
+Or if installed via pip:
+```bash
+octobot_node
+```
+
+#### CLI Options
+
+- `-v, --version`: Show OctoBot-Node current version
+- `--host HOST`: Host to bind the server to (default: 0.0.0.0)
+- `--port PORT`: Port to bind the server to (default: 8000)
+- `--workers WORKERS`: Number of worker processes (default: 1)
+- `--reload`: Enable auto-reload for development (only works with single worker)
+
+#### Examples
+
+Start the server on a custom host and port:
+```bash
+python start.py --host 127.0.0.1 --port 9000
+```
+
+Start with multiple workers for production:
+```bash
+python start.py --workers 4
+```
+
+Start in development mode with auto-reload:
+```bash
+python start.py --reload
+```
+
+Show version:
+```bash
+python start.py --version
+```
+
+### With Redis
+
+For using Redis as the scheduler backend:
 ```bash
 docker run -p 6379:6379 --name redis -d redis redis-server --save 60 1 --loglevel warning
 ```
@@ -67,16 +113,22 @@ The API server is built using [FastAPI](https://github.com/fastapi) and provides
 
 #### Running the FastAPI Server
 
-You can start the API server directly, specifying the number of worker processes:
+You can start the API server using the CLI (recommended):
 
 ```bash
-python fastapi run --workers 1 octobot_node/app/main.py
+python start.py --workers 1
+```
+
+Or directly with uvicorn:
+
+```bash
+uvicorn octobot_node.app.main:app --host 0.0.0.0 --port 8000 --workers 1
 ```
 
 - By default, the server runs on [http://localhost:8000](http://localhost:8000).
 - You can configure environment variables via `.env`, including host, port, and scheduler/backend settings.
-- For development: Use fewer workers (e.g. `--workers 1`), so that code changes are picked up more easily.
-- For production: Increase the number of workers and consider using a production-grade WSGI server (`uvicorn` recommended).
+- For development: Use `--reload` flag or fewer workers (e.g. `--workers 1`), so that code changes are picked up more easily.
+- For production: Increase the number of workers using `--workers` option.
 
 ##### Environment Variables
 

@@ -55,7 +55,11 @@ class SchedulerConsumer:
         logging.info("starting consumer")
         config.values['worker_type'] = WORKER_THREAD
         consumer = self.scheduler.INSTANCE.create_consumer(**config.values)
-        consumer.run()
+        try:
+            consumer.run()
+        except ValueError as e:
+            # Ignore `ValueError: signal only works in main thread of the main interpreter``
+            self.logger.debug(f"ValueError ignored when starting consumer: {e}")
 
     def start_thread(self) -> None:
         if settings.SCHEDULER_NODE_TYPE == "master":

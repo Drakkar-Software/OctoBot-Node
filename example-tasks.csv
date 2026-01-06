@@ -1,0 +1,6 @@
+name,content,type,actions,order_type,order_price,order_symbol,order_amount,order_leverage,exchange_from,exchange_to,blockchain_asset,blockchain_amount,blockchain_source_address,blockchain_destination_address,blockchain_from,blockchain_to
+"Deposit 1 Bitcoin","","execute_actions","deposit","","","","","","","binance","BTC",1,"","","Bitcoin",""
+"Trade 1 ETH vs Bitcoin","","execute_actions","trade","market_order","","ETH/BTC",1,"","","","","","","","",""
+"Open long position on Binance","","execute_actions","trade","limit",50000,"","",10,"","","binance","","","","",""
+"Buy YES to $150k what-price-will-bitcoin-hit-in-january-2026 on polymarket","","execute_actions","trade","market_order","","what-price-will-bitcoin-hit-in-january-2026/USDC:USDC-260131-0-YES","","","","","polymarket","","","","",""
+"Decentralized trading example","EXCHANGE_TO=Binance;BLOCKCHAIN_ASSET=BTC;BLOCKCHAIN_AMOUNT=1;BLOCKCHAIN_FROM=Bitcoin;ORDER_SYMBOL=ETH/BTC;ORDER_AMOUNT=1;ORDER_TYPE=market;EXCHANGE_FROM=Binance;BLOCKCHAIN_TO=Ethereum;BLOCKCHAIN_ASSET=ETH;BLOCKCHAIN_AMOUNT=1","execute_actions","deposit,wait,trade,wait,withdraw","","","","","","","","","","","",""

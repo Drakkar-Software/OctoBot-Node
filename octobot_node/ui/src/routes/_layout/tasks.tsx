@@ -7,6 +7,7 @@ import type { TaskStatus } from "@/client"
 import { TasksService } from "@/client"
 import { DataTable } from "@/components/Common/DataTable"
 import AddTask from "@/components/Tasks/AddTask"
+import ImportTask from "@/components/Tasks/ImportTask"
 import { columns } from "@/components/Tasks/columns"
 import PendingTasks from "@/components/Tasks/PendingTasks"
 import { TaskMetrics } from "@/components/Tasks/TaskMetrics"
@@ -23,7 +24,7 @@ export const Route = createFileRoute("/_layout/tasks")({
   head: () => ({
     meta: [
       {
-        title: "Tasks - OctoBot Node",
+        title: "Tasks",
       },
     ],
   }),
@@ -53,7 +54,7 @@ function TasksTableContent({ filter }: TasksTableContentProps) {
           <Search className="h-8 w-8 text-muted-foreground" />
         </div>
         <h3 className="text-lg font-semibold">You don't have any tasks yet</h3>
-        <p className="text-muted-foreground">Add a new task to get started</p>
+        <p className="text-muted-foreground">Create or import a task to get started</p>
       </div>
     )
   }
@@ -95,7 +96,10 @@ function Tasks() {
           <h1 className="text-2xl font-bold tracking-tight">Tasks</h1>
           <p className="text-muted-foreground">Create and manage your tasks</p>
         </div>
-        <AddTask />
+        <div className="flex gap-2">
+          <ImportTask />
+          <AddTask />
+        </div>
       </div>
       <TaskMetrics 
         selectedFilter={selectedFilter} 

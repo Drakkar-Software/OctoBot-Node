@@ -14,43 +14,23 @@ export type Node = {
 };
 
 export type Task = {
-    id: string;
-    name: string;
-    description: string;
-    status: TaskStatus;
-    retries?: number;
-    expires_at?: (string | null);
+    id?: string;
+    name?: (string | null);
+    description?: (string | null);
+    content?: (string | null);
+    type?: (string | null);
+    status?: (TaskStatus | null);
+    retries?: (number | null);
+    retry_delay?: (number | null);
+    priority?: (number | null);
+    expires?: (string | null);
+    expires_resolved?: (string | null);
     scheduled_at?: (string | null);
     started_at?: (string | null);
     completed_at?: (string | null);
 };
 
-export type TaskCreate = {
-    name: string;
-    description: string;
-};
-
-export type TaskDelete = {
-    id: string;
-    name: string;
-    description: string;
-    status: TaskStatus;
-    retries?: number;
-    expires_at?: (string | null);
-    scheduled_at?: (string | null);
-    started_at?: (string | null);
-    completed_at?: (string | null);
-};
-
-/**
- * Task status enumeration.
- */
 export type TaskStatus = 'pending' | 'scheduled' | 'periodic' | 'running' | 'completed' | 'failed';
-
-export type TaskUpdate = {
-    name: string;
-    description: string;
-};
 
 export type User = {
     email: string;
@@ -78,11 +58,14 @@ export type LoginTestAuthResponse = (User);
 
 export type NodesGetCurrentNodeResponse = (Node);
 
-export type TasksCreateTaskData = {
-    requestBody: TaskCreate;
+export type TasksCreateTasksData = {
+    requestBody: Array<Task>;
 };
 
-export type TasksCreateTaskResponse = (Task);
+export type TasksCreateTasksResponse = ([
+    number,
+    number
+]);
 
 export type TasksGetTasksData = {
     limit?: number;
@@ -92,7 +75,7 @@ export type TasksGetTasksData = {
 export type TasksGetTasksResponse = (Array<Task>);
 
 export type TasksUpdateTaskData = {
-    requestBody: TaskUpdate;
+    requestBody: Task;
     taskId: string;
 };
 
@@ -102,10 +85,8 @@ export type TasksDeleteTaskData = {
     taskId: string;
 };
 
-export type TasksDeleteTaskResponse = (TaskDelete);
+export type TasksDeleteTaskResponse = (string);
 
 export type TasksGetMetricsResponse = (unknown);
-
-export type TasksTriggerPingResponse = (Task);
 
 export type UsersReadUserMeResponse = (User);

@@ -15,9 +15,10 @@
 #  License along with OctoBot. If not, see <https://www.gnu.org/licenses/>.
 
 from huey import Huey, RedisHuey, SqliteHuey
+from huey.registry import Message
 from typing import Optional, Any
 import logging
-from octobot_node.app.models import TaskStatus
+from octobot_node.app.models import Task, TaskType, TaskStatus
 from octobot_node.app.core.config import settings
 
 class Scheduler:
@@ -46,32 +47,21 @@ class Scheduler:
             self.logger.warning("Scheduler not initialized")
 
     def get_periodic_tasks(self) -> list[dict]:
-        return [{
-                "id": task.id,
-                "name": task.name,
-                "description": f"Periodic task: {task.name} (runs every minute)",
-                "status": TaskStatus.PERIODIC,
-                "retries": task.retries,
-                "expires_at": task.expires,
-                "scheduled_at": None,
-                "started_at": None,
-                "completed_at": None,
-            } for task in self.INSTANCE._registry.periodic_tasks]
+        tasks: list[dict] = []
+        periodic_tasks = self.INSTANCE._registry.periodic_tasks
+        for task in periodic_tasks or []:
+            try:
+                tasks.append(self._parse_task(task, "Periodic task: {task.name}", TaskStatus.PERIODIC))
+            except Exception as e:
+                self.logger.warning("Failed to process periodic task %s: %s", task.id, e)
+        return tasks
 
     def get_pending_tasks(self) -> list[dict]:
         tasks: list[dict] = []
         pending_tasks = self.INSTANCE.pending()
         for task in pending_tasks or []:
             try:
-                tasks.append({
-                    "id": task.id,
-                    "name": task.name,
-                    "description": f"Pending task: {task.name}",
-                    "status": TaskStatus.PENDING,
-                    "scheduled_at": "",# task_metadata.get("scheduled_at"),
-                    "started_at": None,
-                    "completed_at": None,
-                })
+                tasks.append(self._parse_task(task, "Pending task: {task.name}", TaskStatus.PENDING))
             except Exception as e:
                 self.logger.warning("Failed to process pending task %s: %s", task.id, e)
         return tasks
@@ -81,15 +71,7 @@ class Scheduler:
         scheduled_tasks = self.INSTANCE.scheduled()
         for task in scheduled_tasks or []:
             try:
-                tasks.append({
-                    "id": task.id,
-                    "name": task.name,
-                    "description": f"Scheduled task: {task.name}",
-                    "status": TaskStatus.SCHEDULED,
-                    "scheduled_at": "",# scheduled_at,
-                    "started_at": "",# task_metadata.get("started_at"),
-                    "completed_at": None,
-                })
+                tasks.append(self._parse_task(task, "Scheduled task: {task.name}", TaskStatus.SCHEDULED))
             except Exception as e:
                 self.logger.warning("Failed to process scheduled task %s: %s", task.id, e)
         return tasks
@@ -111,6 +93,30 @@ class Scheduler:
             except Exception as e:
                 self.logger.debug("Failed to process result key %s: %s", result_key, e)
         return tasks
+
+
+    def _parse_task(self, message: Message, status: TaskStatus, description: Optional[str] = None) -> Task:
+        task_kwargs = message.kwargs
+        task_actions = task_kwargs.get("actions")
+        task_type = task_kwargs.get("type")
+
+        return Task(
+            id=message.id,
+            name=message.name,
+            description=description,
+            actions=task_actions,
+            type=TaskType(task_type) if task_type else None,
+            status=status,
+            retries=message.retries,
+            retry_delay=message.retry_delay,
+            priority=message.priority,
+            expires=message.expires,
+            expires_resolved=message.expires_resolved,
+            scheduled_at=message.eta,
+            started_at=None,
+            completed_at=None,
+        )
+
 
     def save_data(self, key: str, value: str) -> None:
         self.INSTANCE.storage.put_data(key, value)
