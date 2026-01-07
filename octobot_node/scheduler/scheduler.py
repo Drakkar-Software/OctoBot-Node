@@ -41,7 +41,7 @@ class Scheduler:
 
     def stop(self) -> None:
         if self.INSTANCE:
-            self.INSTANCE.stop()
+            # TODO self.INSTANCE.stop()
             self.logger.info("Scheduler stopped")
         else:
             self.logger.warning("Scheduler not initialized")

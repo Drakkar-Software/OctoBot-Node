@@ -14,7 +14,9 @@
 #  You should have received a copy of the GNU General Public
 #  License along with OctoBot. If not, see <https://www.gnu.org/licenses/>.
 
+import os
 import secrets
+import sys
 import warnings
 from typing import Annotated, Any, Literal
 
@@ -30,6 +32,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing_extensions import Self
 
 
+def _get_env_file() -> str:
+    # Check if pytest module is imported
+    if "pytest" in sys.modules:
+        return ".env.test"
+    return ".env"
+
+
 def parse_cors(v: Any) -> list[str] | str:
     if isinstance(v, str) and not v.startswith("["):
         return [i.strip() for i in v.split(",") if i.strip()]
@@ -40,8 +49,8 @@ def parse_cors(v: Any) -> list[str] | str:
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        # Use top level .env file (one level above ./backend/)
-        env_file=".env",
+        # Use .env.test when running tests, otherwise use .env
+        env_file=_get_env_file(),
         env_ignore_empty=True,
         extra="ignore",
     )
