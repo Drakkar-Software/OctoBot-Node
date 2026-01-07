@@ -257,3 +257,44 @@ export async function parseCSVFile(file: File): Promise<CSVRow[]> {
     );
   }
 }
+
+export function escapeCSVValue(value: unknown): string {
+  if (value === null || value === undefined) {
+    return "";
+  }
+  
+  const stringValue = typeof value === "object" 
+    ? JSON.stringify(value) 
+    : String(value);
+  
+  // If value contains comma, quote, or newline, wrap in quotes and escape quotes
+  if (stringValue.includes(",") || stringValue.includes('"') || stringValue.includes("\n")) {
+    return `"${stringValue.replace(/"/g, '""')}"`;
+  }
+  
+  return stringValue;
+}
+
+export function generateCSV(headers: string[], rows: unknown[][]): string {
+  const csvRows: string[] = [];
+  
+  csvRows.push(headers.map(escapeCSVValue).join(","));
+  
+  for (const row of rows) {
+    csvRows.push(row.map(escapeCSVValue).join(","));
+  }
+  
+  return csvRows.join("\n");
+}
+
+export function downloadCSV(csvString: string, filename: string): void {
+  const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${filename}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}

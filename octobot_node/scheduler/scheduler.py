@@ -16,8 +16,11 @@
 
 from huey import Huey, RedisHuey, SqliteHuey
 from huey.registry import Message
+from huey.utils import Error as HueyError
 from typing import Optional, Any
 import logging
+import pickle
+import json
 from octobot_node.app.models import Task, TaskType, TaskStatus
 from octobot_node.app.core.config import settings
 
@@ -76,22 +79,45 @@ class Scheduler:
                 self.logger.warning("Failed to process scheduled task %s: %s", task.id, e)
         return tasks
 
+    def _decode_result(self, result_key_bytes: bytes | str, result_value_bytes: bytes | Any) -> tuple[str, Any | None]:
+        task_id = result_key_bytes.decode('utf-8') if isinstance(result_key_bytes, bytes) else result_key_bytes
+        
+        try:
+            result_obj = pickle.loads(result_value_bytes) if isinstance(result_value_bytes, bytes) else result_value_bytes
+            return (task_id, result_obj)
+        except (pickle.UnpicklingError, Exception) as unpickle_error:
+            self.logger.warning("Failed to unpickle result for task %s: %s", task_id, unpickle_error)
+            return (task_id, None)
+
     def get_results(self) -> list[dict]:
         tasks: list[dict] = []
         result_keys = self.INSTANCE.all_results()
-        for result_key in result_keys:
+        for result_key_bytes, result_value_bytes in result_keys.items():
             try:
+                task_id, result_obj = self._decode_result(result_key_bytes, result_value_bytes)
+                
+                if result_obj is None:
+                    description = f"Task completed (unable to parse result)"
+                    status = TaskStatus.COMPLETED
+                elif isinstance(result_obj, HueyError):
+                    description = f"Task failed: {result_obj.error}"
+                    status = TaskStatus.FAILED
+                else:
+                    description = f"Task completed"
+                    status = TaskStatus.COMPLETED
+                
                 tasks.append({
-                    "id": result_key,
-                    "name": result_key,
-                    "description": f"Task completed",
-                    "status": TaskStatus.COMPLETED,
+                    "id": task_id,
+                    "name": task_id,
+                    "description": description,
+                    "status": status,
+                    "result": json.dumps(result_obj),
                     "scheduled_at": None,
                     "started_at": None,
                     "completed_at": None,
                 })
             except Exception as e:
-                self.logger.debug("Failed to process result key %s: %s", result_key, e)
+                self.logger.debug("Failed to process result key %s: %s", result_key_bytes, e)
         return tasks
 
 
