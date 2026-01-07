@@ -6,8 +6,8 @@ import { Suspense, useState } from "react"
 import type { TaskStatus } from "@/client"
 import { TasksService } from "@/client"
 import { DataTable } from "@/components/Common/DataTable"
-import AddTask from "@/components/Tasks/AddTask"
 import ImportTask from "@/components/Tasks/ImportTask"
+import ExportResults from "@/components/Tasks/ExportResults"
 import { columns } from "@/components/Tasks/columns"
 import PendingTasks from "@/components/Tasks/PendingTasks"
 import { TaskMetrics } from "@/components/Tasks/TaskMetrics"
@@ -98,7 +98,8 @@ function Tasks() {
         </div>
         <div className="flex gap-2">
           <ImportTask />
-          <AddTask />
+          <ExportResults />
+          {/* <AddTask /> */}
         </div>
       </div>
       <TaskMetrics 

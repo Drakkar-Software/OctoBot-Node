@@ -20,6 +20,7 @@ export type Task = {
     content?: (string | null);
     type?: (string | null);
     status?: (TaskStatus | null);
+    result?: (string | null);
     retries?: (number | null);
     retry_delay?: (number | null);
     priority?: (number | null);
