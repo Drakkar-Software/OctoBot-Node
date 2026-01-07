@@ -30,14 +30,14 @@ _BASIC_AUTH_USER_ID = uuid.uuid4()
 # TODO: support other auth methods (like supabase, jwt, etc.)
 
 def get_current_user(credentials: Annotated[HTTPBasicCredentials, Depends(security_basic)]) -> User:
-    if credentials.username != settings.FIRST_SUPERUSER:
+    if credentials.username != settings.ADMIN_USERNAME:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Basic"},
         )
     
-    if credentials.password != settings.FIRST_SUPERUSER_PASSWORD:
+    if credentials.password != settings.ADMIN_PASSWORD:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
@@ -46,7 +46,7 @@ def get_current_user(credentials: Annotated[HTTPBasicCredentials, Depends(securi
 
     user = User(
         id=_BASIC_AUTH_USER_ID,
-        email=settings.FIRST_SUPERUSER,
+        email=settings.ADMIN_USERNAME,
         is_active=True,
         is_superuser=True,
         full_name=None,

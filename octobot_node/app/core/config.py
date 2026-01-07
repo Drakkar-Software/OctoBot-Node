@@ -14,7 +14,7 @@
 #  You should have received a copy of the GNU General Public
 #  License along with OctoBot. If not, see <https://www.gnu.org/licenses/>.
 
-import os
+import logging
 import secrets
 import sys
 import warnings
@@ -31,6 +31,9 @@ from pydantic import (
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing_extensions import Self
 
+
+DEFAULT_ADMIN_USERNAME: EmailStr = "admin@example.com"
+DEFAULT_ADMIN_PASSWORD: str = "changethis"
 
 def _get_env_file() -> str:
     # Check if pytest module is imported
@@ -79,25 +82,25 @@ class Settings(BaseSettings):
     SCHEDULER_NODE_TYPE: Literal["master", "slave"] = "slave"
     SCHEDULER_WORKERS: int = 4
 
-    FIRST_SUPERUSER: EmailStr
-    FIRST_SUPERUSER_PASSWORD: str
+    ADMIN_USERNAME: EmailStr = DEFAULT_ADMIN_USERNAME
+    ADMIN_PASSWORD: str = DEFAULT_ADMIN_PASSWORD
 
-    def _check_default_secret(self, var_name: str, value: str | None) -> None:
-        if value == "changethis":
+    def _check_default_secret(self, var_name: str, value: str | None, default_value: EmailStr | None) -> None:
+        if value == default_value:
             message = (
-                f'The value of {var_name} is "changethis", '
+                f'The value of {var_name} is "{default_value}", '
                 "for security, please change it, at least for deployments."
             )
             if self.ENVIRONMENT == "local":
-                warnings.warn(message, stacklevel=1)
+                logging.getLogger("Settings").warning(message)
             else:
                 raise ValueError(message)
 
     @model_validator(mode="after")
     def _enforce_non_default_secrets(self) -> Self:
-        self._check_default_secret("SECRET_KEY", self.SECRET_KEY)
+        self._check_default_secret("ADMIN_USERNAME", self.ADMIN_USERNAME, DEFAULT_ADMIN_USERNAME)
         self._check_default_secret(
-            "FIRST_SUPERUSER_PASSWORD", self.FIRST_SUPERUSER_PASSWORD
+            "ADMIN_PASSWORD", self.ADMIN_PASSWORD, DEFAULT_ADMIN_PASSWORD
         )
 
         return self
