@@ -13,8 +13,12 @@
 #
 #  You should have received a copy of the GNU General Public
 #  License along with OctoBot. If not, see <https://www.gnu.org/licenses/>.
+import os
+import subprocess
+import sys
 from setuptools import find_packages
 from setuptools import setup
+from setuptools.command.sdist import sdist
 from octobot_node import PROJECT_NAME, AUTHOR, VERSION
 
 PACKAGES = find_packages(exclude=["tests", ])
@@ -26,6 +30,25 @@ with open('README.md', encoding='utf-8') as f:
 
 REQUIRED = open('requirements.txt').readlines()
 REQUIRES_PYTHON = '>=3.10'
+
+
+class BuildUIAndSDist(sdist):    
+    def run(self):
+        self.announce('Running npm build before creating source distribution...', level=2)
+        try:
+            self.announce('Installing npm dependencies...', level=2)
+            subprocess.check_call(['npm', 'install'], cwd=os.getcwd())
+            subprocess.check_call(['npm', 'run', 'build'], cwd=os.getcwd())
+            self.announce('npm build completed successfully', level=2)
+        except subprocess.CalledProcessError as e:
+            self.announce(f'Error running npm build: {e}', level=1)
+            sys.exit(1)
+        except FileNotFoundError:
+            self.announce('npm not found. Skipping npm build step.', level=1)
+                
+        # Call the parent sdist run method
+        super().run()
+
 
 setup(
     name=PROJECT_NAME.lower().replace("-", "_"),
@@ -62,4 +85,7 @@ setup(
         'Operating System :: POSIX',
         'Programming Language :: Python :: 3.10',
     ],
+    cmdclass={
+        'sdist': BuildUIAndSDist,
+    },
 )

@@ -1,3 +1,6 @@
-# Include dist folder for frontend assets in the package
-recursive-include octobot_node/ui/dist *
+include README.md
+include LICENSE
+include CHANGELOG.md
+include requirements.txt
 
+recursive-include octobot_node/ui/dist *
