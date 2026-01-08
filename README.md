@@ -1,4 +1,9 @@
 # OctoBot Node
+[![PyPI](https://img.shields.io/pypi/v/octobot_node.svg?logo=pypi)](https://pypi.org/project/octobot_node)
+[![OctoBot-Node-CI](https://github.com/Drakkar-Software/OctoBot-Node/workflows/OctoBot-Node-CI/badge.svg)](https://github.com/Drakkar-Software/OctoBot-Node/actions)
+[![Telegram](https://img.shields.io/badge/Telegram-grey.svg?logo=telegram)](https://t.me/OctoBot_Project)
+[![Twitter](https://img.shields.io/twitter/follow/DrakkarsOctobot.svg?label=twitter&style=social)](https://x.com/DrakkarsOctoBot)
+[![YouTube](https://img.shields.io/youtube/channel/views/UC2YAaBeWY8y_Olqs79b_X8A?label=youtube&style=social)](https://www.youtube.com/@octobot1134)
 
 <p align="middle">
 <img src="public/assets/images/octobot_node_256.png" height="256" alt="OctoBot Node logo">
@@ -31,10 +36,13 @@ octobot_node
 #### CLI Options
 
 - `-v, --version`: Show OctoBot-Node current version
-- `--host HOST`: Host to bind the server to (default: 0.0.0.0)
+- `--host HOST`: Host to bind the server to (default: 0.0.0.0 for master in production, 127.0.0.1 otherwise)
 - `--port PORT`: Port to bind the server to (default: 8000)
-- `--workers WORKERS`: Number of worker processes (default: 1)
-- `--reload`: Enable auto-reload for development (only works with single worker)
+- `--master`: Enable master node mode (schedules tasks)
+- `--consumers N`: Number of consumer worker threads (0 disables consumers, default: 0). Can be used with --master
+- `--environment {local,production}`: Environment mode (default: from ENVIRONMENT environment variable). Auto-reload is enabled automatically when environment is local
+- `--admin-username EMAIL`: Admin username in email format (default: from ADMIN_USERNAME environment variable)
+- `--admin-password PASSWORD`: Admin password (default: from ADMIN_PASSWORD environment variable)
 
 #### Examples
 
@@ -43,14 +51,34 @@ Start the server on a custom host and port:
 python start.py --host 127.0.0.1 --port 9000
 ```
 
-Start with multiple workers for production:
+Start as master node (schedules tasks):
 ```bash
-python start.py --workers 4
+python start.py --master
 ```
 
-Start in development mode with auto-reload:
+Start with consumer workers:
 ```bash
-python start.py --reload
+python start.py --consumers 4
+```
+
+Start as master node with consumer workers:
+```bash
+python start.py --master --consumers 4
+```
+
+Start in development mode (auto-reload enabled automatically):
+```bash
+python start.py --environment local
+```
+
+Start in production mode:
+```bash
+python start.py --master --environment production
+```
+
+Set admin credentials:
+```bash
+python start.py --master --admin-username admin@example.com --admin-password mypassword
 ```
 
 Show version:
@@ -116,35 +144,42 @@ The API server is built using [FastAPI](https://github.com/fastapi) and provides
 You can start the API server using the CLI (recommended):
 
 ```bash
-python start.py --workers 1
+python start.py --master
 ```
 
 Or directly with uvicorn:
 
 ```bash
-uvicorn octobot_node.app.main:app --host 0.0.0.0 --port 8000 --workers 1
+uvicorn octobot_node.app.main:app --host 0.0.0.0 --port 8000
 ```
 
 - By default, the server runs on [http://localhost:8000](http://localhost:8000).
 - You can configure environment variables via `.env`, including host, port, and scheduler/backend settings.
-- For development: Use `--reload` flag or fewer workers (e.g. `--workers 1`), so that code changes are picked up more easily.
-- For production: Increase the number of workers using `--workers` option.
+- For development: Use `--environment local` flag. Auto-reload is enabled automatically in local environment.
+- For production: Use `--master --environment production` to enable master mode in production.
+- The FastAPI server always runs with a single worker (default FastAPI behavior).
+- Consumer workers are configured separately using `--consumers N`.
 
 ##### Environment Variables
 
 Some key `.env` variables:
-- `SCHEDULER_BACKEND` (redis, sqlite, etc.)
-- `SCHEDULER_REDIS_URL` (if using Redis)
-- `SCHEDULER_SQLITE_FILE` (if using SQLite)
-- `SCHEDULER_NODE_TYPE` ("master" or "worker")
-- `SCHEDULER_WORKERS` (number of consumer workers)
+- `SCHEDULER_REDIS_URL` (if using Redis as backend)
+- `SCHEDULER_SQLITE_FILE` (if using SQLite, default: "tasks.db")
+- `SCHEDULER_WORKERS` (number of consumer workers, default: 0, can be overridden with --consumers)
+- `ENVIRONMENT` (environment mode: "local" or "production", default: "production")
+- `ADMIN_USERNAME` (admin username in email format, can be overridden with --admin-username)
+- `ADMIN_PASSWORD` (admin password, can be overridden with --admin-password)
+
+Note: Master mode is controlled via the `--master` CLI flag, not via environment variables.
 
 See `.env.sample` for all options, and adjust as needed.
 
 #### Scheduler
 
-The task scheduler is automatically started together with the FastAPI server through import of the `octobot_node/app/scheduler` module. The scheduler uses [Huey](https://github.com/coleifer/huey) for task queue management.
+The task scheduler is automatically started together with the FastAPI server through import of the `octobot_node/scheduler` module. The scheduler uses [Huey](https://github.com/coleifer/huey) for task queue management.
 
-- **No manual launch needed** — scheduler and consumers are managed by the FastAPI app on startup.
+- **No manual launch needed** — scheduler and consumers are managed automatically on startup.
 - Configuration for the scheduler backend (Redis or SQLite) is picked up from environment variables.
-- When `SCHEDULER_NODE_TYPE=worker`, background consumers process tasks automatically. When set to `master`, consumer threads are skipped by design.
+- Consumer workers are started automatically if `SCHEDULER_WORKERS > 0` (or `--consumers N` is used).
+- Master mode is enabled via the `--master` CLI flag and allows the node to schedule tasks.
+- A node can be both a master (schedules tasks) and run consumer workers simultaneously.

@@ -17,14 +17,10 @@
 import logging
 import threading
 
-import logging
 from octobot_node.app.core.config import settings
 
 from octobot_node.scheduler.scheduler import Scheduler
 from huey.constants import WORKER_THREAD
-from huey.consumer import Consumer
-from huey.consumer_options import ConsumerConfig
-from huey.consumer_options import OptionParserHandler
 
 class SchedulerConsumer:
     def __init__(self, scheduler: Scheduler):
@@ -33,6 +29,7 @@ class SchedulerConsumer:
         self.thread = None
         self.lock = threading.Lock()
         self.logger = logging.getLogger(__name__)
+        self.workers: int | None = None
     
     def start(self):
         with self.lock:
@@ -41,39 +38,31 @@ class SchedulerConsumer:
                 self.logger.info("Scheduler consumer thread started automatically on import")
     
     def _run(self):
-        parser_handler = OptionParserHandler()
-        parser = parser_handler.get_option_parser()
-        options, args = parser.parse_args()
-
-        options = {k: v for k, v in options.__dict__.items()
-                if v is not None}
-        config = ConsumerConfig(**options)
-        config.validate()
-
-        logger = logging.getLogger('huey')
-        config.setup_logger(logger)
-        logging.info("starting consumer")
-        config.values['worker_type'] = WORKER_THREAD
-        consumer = self.scheduler.INSTANCE.create_consumer(**config.values)
+        if not self.consumer:
+            self.logger.error("Consumer not initialized. Cannot start consumer thread.")
+            return
+        self.logger.info("Starting consumer...")
         try:
-            consumer.run()
+            self.consumer.run()
         except ValueError as e:
             # Ignore `ValueError: signal only works in main thread of the main interpreter``
             self.logger.debug(f"ValueError ignored when starting consumer: {e}")
 
     def start_thread(self) -> None:
-        if settings.SCHEDULER_NODE_TYPE == "master":
-            self.logger.info("Node is configured as master - skipping consumer startup")
+        if settings.SCHEDULER_WORKERS <= 0:
+            self.logger.info("Consumers are disabled.")
+            self.workers = None
             return
-        self.logger.info("Starting scheduler consumer")
+        self.logger.info(f"Starting {settings.SCHEDULER_WORKERS} scheduler consumer")
+        self.workers = settings.SCHEDULER_WORKERS
         config_values = {
             "worker_type": WORKER_THREAD,
-            "workers": settings.SCHEDULER_WORKERS,
+            "workers": self.workers,
         }
         self.consumer = self.scheduler.INSTANCE.create_consumer(**config_values)
         self.logger.info(
-            "Scheduler consumer started with %d workers (worker_type=thread)",
-            settings.SCHEDULER_WORKERS
+            f"Scheduler consumer started with {self.workers} workers (worker_type=thread)",
+            self.workers
         )
         self.thread = threading.Thread(
             target=self._run,
@@ -104,3 +93,4 @@ class SchedulerConsumer:
             self.logger.info("Scheduler consumer stopped")
             self.consumer = None
             self.thread = None
+            self.workers = None

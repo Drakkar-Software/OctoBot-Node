@@ -31,6 +31,5 @@ CONSUMER: SchedulerConsumer = SchedulerConsumer(SCHEDULER)
 from octobot_node.scheduler import tasks  # noqa: F401
 
 # Start the consumer automatically when the module is imported
-# Only start on slave nodes
-if settings.SCHEDULER_NODE_TYPE != "master":
+if settings.SCHEDULER_WORKERS > 0:
     CONSUMER.start()

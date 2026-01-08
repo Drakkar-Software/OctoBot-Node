@@ -48,8 +48,7 @@ def get_tasks(page: int = 1, limit: int = 100) -> Any:
     start_idx = (page - 1) * limit
     end_idx = start_idx + limit
     paginated_tasks = tasks_data[start_idx:end_idx]
-    
-    return [Task(**task_data) for task_data in paginated_tasks]
+    return paginated_tasks
 
 @router.put("/", response_model=Task)
 def update_task(taskId: uuid.UUID, task: Task) -> Any:

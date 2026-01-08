@@ -60,7 +60,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = secrets.token_urlsafe(32)
     # 60 minutes * 24 hours * 8 days = 8 days
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
-    ENVIRONMENT: Literal["local", "staging", "production"] = "local"
+    ENVIRONMENT: Literal["local", "production"] = "production"
     BACKEND_HOST: str = "http://localhost:8000"
     FRONTEND_HOST: str = "http://localhost:5173" if ENVIRONMENT == "local" else BACKEND_HOST
 
@@ -78,8 +78,8 @@ class Settings(BaseSettings):
     SENTRY_DSN: HttpUrl | None = None
     SCHEDULER_REDIS_URL: AnyUrl | None = None
     SCHEDULER_SQLITE_FILE: str = "tasks.db"
-    SCHEDULER_NODE_TYPE: Literal["master", "slave"] = "slave"
-    SCHEDULER_WORKERS: int = 4
+    SCHEDULER_WORKERS: int = 0  # 0 disables consumers, >0 enables consumers
+    IS_MASTER_MODE: bool = False  # Enable master node mode
     REDIS_STORAGE_CERTS_PATH: str | None = None
 
     ADMIN_USERNAME: EmailStr = DEFAULT_ADMIN_USERNAME
@@ -98,10 +98,11 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _enforce_non_default_secrets(self) -> Self:
-        self._check_default_secret("ADMIN_USERNAME", self.ADMIN_USERNAME, DEFAULT_ADMIN_USERNAME)
-        self._check_default_secret(
-            "ADMIN_PASSWORD", self.ADMIN_PASSWORD, DEFAULT_ADMIN_PASSWORD
-        )
+        if self.IS_MASTER_MODE:
+            self._check_default_secret("ADMIN_USERNAME", self.ADMIN_USERNAME, DEFAULT_ADMIN_USERNAME)
+            self._check_default_secret(
+                "ADMIN_PASSWORD", self.ADMIN_PASSWORD, DEFAULT_ADMIN_PASSWORD
+            )
         return self
 
 

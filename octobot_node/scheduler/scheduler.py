@@ -45,7 +45,7 @@ class Scheduler:
                 ssl_certfile=f"{settings.REDIS_STORAGE_CERTS_PATH}/client/client.crt",
                 ssl_keyfile=f"{settings.REDIS_STORAGE_CERTS_PATH}/client/client.key",
                 ssl_cert_reqs="required",
-                decode_responses=True,
+                decode_responses=False,
                 socket_timeout=5,
                 socket_connect_timeout=3
             ) if settings.REDIS_STORAGE_CERTS_PATH is not None else None
@@ -69,7 +69,7 @@ class Scheduler:
         periodic_tasks = self.INSTANCE._registry.periodic_tasks
         for task in periodic_tasks or []:
             try:
-                tasks.append(self._parse_task(task, "Periodic task: {task.name}", TaskStatus.PERIODIC))
+                tasks.append(self._parse_task(task, TaskStatus.PERIODIC, f"Periodic task: {task.name}"))
             except Exception as e:
                 self.logger.warning("Failed to process periodic task %s: %s", task.id, e)
         return tasks
@@ -79,7 +79,7 @@ class Scheduler:
         pending_tasks = self.INSTANCE.pending()
         for task in pending_tasks or []:
             try:
-                tasks.append(self._parse_task(task, "Pending task: {task.name}", TaskStatus.PENDING))
+                tasks.append(self._parse_task(task, TaskStatus.PENDING, f"Pending task: {task.name}"))
             except Exception as e:
                 self.logger.warning("Failed to process pending task %s: %s", task.id, e)
         return tasks
@@ -89,9 +89,9 @@ class Scheduler:
         scheduled_tasks = self.INSTANCE.scheduled()
         for task in scheduled_tasks or []:
             try:
-                tasks.append(self._parse_task(task, "Scheduled task: {task.name}", TaskStatus.SCHEDULED))
+                tasks.append(self._parse_task(task, TaskStatus.SCHEDULED, f"Scheduled task: {task.name}"))
             except Exception as e:
-                self.logger.warning("Failed to process scheduled task %s: %s", task.id, e)
+                self.logger.warning(f"Failed to process scheduled task {task.id}: {e}")
         return tasks
 
     def _decode_result(self, result_key_bytes: bytes | str, result_value_bytes: bytes | Any) -> tuple[str, Any | None]:
@@ -101,7 +101,7 @@ class Scheduler:
             result_obj = pickle.loads(result_value_bytes) if isinstance(result_value_bytes, bytes) else result_value_bytes
             return (task_id, result_obj)
         except (pickle.UnpicklingError, Exception) as unpickle_error:
-            self.logger.warning("Failed to unpickle result for task %s: %s", task_id, unpickle_error)
+            self.logger.warning(f"Failed to unpickle result for task {task_id}: {unpickle_error}")
             return (task_id, None)
 
     def get_results(self) -> list[dict]:
@@ -132,7 +132,7 @@ class Scheduler:
                     "completed_at": None,
                 })
             except Exception as e:
-                self.logger.debug("Failed to process result key %s: %s", result_key_bytes, e)
+                self.logger.warning(f"Failed to process result key {result_key_bytes}: {e}")
         return tasks
 
 
