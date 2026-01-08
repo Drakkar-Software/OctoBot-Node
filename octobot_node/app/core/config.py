@@ -17,7 +17,6 @@
 import logging
 import secrets
 import sys
-import warnings
 from typing import Annotated, Any, Literal
 
 from pydantic import (
@@ -81,6 +80,7 @@ class Settings(BaseSettings):
     SCHEDULER_SQLITE_FILE: str = "tasks.db"
     SCHEDULER_NODE_TYPE: Literal["master", "slave"] = "slave"
     SCHEDULER_WORKERS: int = 4
+    REDIS_STORAGE_CERTS_PATH: str | None = None
 
     ADMIN_USERNAME: EmailStr = DEFAULT_ADMIN_USERNAME
     ADMIN_PASSWORD: str = DEFAULT_ADMIN_PASSWORD
@@ -102,7 +102,6 @@ class Settings(BaseSettings):
         self._check_default_secret(
             "ADMIN_PASSWORD", self.ADMIN_PASSWORD, DEFAULT_ADMIN_PASSWORD
         )
-
         return self
 
 
