@@ -24,6 +24,8 @@ import json
 from octobot_node.app.models import Task, TaskType, TaskStatus
 from octobot_node.app.core.config import settings
 
+DEFAULT_NAME = "octobot_node"
+
 class Scheduler:
     INSTANCE: Optional[Huey] = None
 
@@ -32,15 +34,28 @@ class Scheduler:
 
     def create(self):
         if settings.SCHEDULER_REDIS_URL:
+            import redis
             self.logger.info(
                 "Initializing scheduler with Redis backend at %s", settings.SCHEDULER_REDIS_URL
             )
-            self.INSTANCE = RedisHuey("octobot-node", url=str(settings.SCHEDULER_REDIS_URL))
+
+            connection_pool = redis.ConnectionPool.from_url(
+                str(settings.SCHEDULER_REDIS_URL),
+                ssl_ca_certs=f"{settings.REDIS_STORAGE_CERTS_PATH}/ca.crt",
+                ssl_certfile=f"{settings.REDIS_STORAGE_CERTS_PATH}/client/client.crt",
+                ssl_keyfile=f"{settings.REDIS_STORAGE_CERTS_PATH}/client/client.key",
+                ssl_cert_reqs="required",
+                decode_responses=True,
+                socket_timeout=5,
+                socket_connect_timeout=3
+            ) if settings.REDIS_STORAGE_CERTS_PATH is not None else None
+
+            self.INSTANCE = RedisHuey(DEFAULT_NAME, connection_pool=connection_pool) if connection_pool is not None else RedisHuey(DEFAULT_NAME, url=str(settings.SCHEDULER_REDIS_URL))
         else:
             self.logger.info(
                 "Initializing scheduler with sqlite backend at %s", settings.SCHEDULER_SQLITE_FILE
             )
-            self.INSTANCE = SqliteHuey("octobot-node", filename=settings.SCHEDULER_SQLITE_FILE)
+            self.INSTANCE = SqliteHuey(DEFAULT_NAME, filename=settings.SCHEDULER_SQLITE_FILE)
 
     def stop(self) -> None:
         if self.INSTANCE:
