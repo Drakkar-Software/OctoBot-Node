@@ -1,6 +1,27 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.0.4] - 2026-01-09
+### Added
+- Task encryption and decryption functionality for task inputs and outputs
+- Hybrid encryption module using RSA (4096-bit), AES-GCM (256-bit), and ECDSA signatures (SECP256R1)
+- `encrypt_task_content()` and `decrypt_task_content()` functions for encrypting/decrypting task inputs
+- `encrypt_task_result()` and `decrypt_task_result()` functions for encrypting/decrypting task outputs
+- Automatic task content decryption during task execution when encryption keys are configured
+- CSV encryption utilities for task imports (`encrypt_csv_content`, `decrypt_csv_content`, `merge_and_encrypt_csv`)
+- Key generation and management utilities for encryption keys
+- Encryption key configuration via environment variables:
+  - `TASKS_INPUTS_RSA_PUBLIC_KEY` and `TASKS_INPUTS_RSA_PRIVATE_KEY`
+  - `TASKS_INPUTS_ECDSA_PUBLIC_KEY` and `TASKS_INPUTS_ECDSA_PRIVATE_KEY`
+  - `TASKS_OUTPUTS_RSA_PUBLIC_KEY` and `TASKS_OUTPUTS_RSA_PRIVATE_KEY`
+  - `TASKS_OUTPUTS_ECDSA_PUBLIC_KEY` and `TASKS_OUTPUTS_ECDSA_PRIVATE_KEY`
+- Custom exception classes for encryption errors: `EncryptionTaskError`, `MissingMetadataError`, `MetadataParsingError`, `SignatureVerificationError`
+- Comprehensive encryption module documentation (README.md)
+
+### Changed
+- Task execution now automatically decrypts task content if encryption keys are configured
+- Tasks operate in plaintext mode when encryption keys are not set (backward compatible)
+
 ## [0.0.3] - 2026-01-08
 ### Added
 - `--master` CLI flag to enable master node mode (schedules tasks)
