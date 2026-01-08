@@ -26,14 +26,23 @@ logger = logging.getLogger(__name__)
 
 def get_node_status() -> dict[str, str | int | None | uuid.UUID]:
     consumer_running = CONSUMER.is_started() # TODO use: CONSUMER.is_running()
-    is_running = settings.SCHEDULER_NODE_TYPE == "master" or consumer_running
+    is_running = settings.IS_MASTER_MODE or consumer_running
     status = "running" if is_running else "stopped"
 
     backend_type = "redis" if settings.SCHEDULER_REDIS_URL else "sqlite"
-    workers = settings.SCHEDULER_WORKERS if settings.SCHEDULER_NODE_TYPE == "slave" else None
+    workers = CONSUMER.workers if settings.SCHEDULER_WORKERS > 0 else None
+
+    if settings.IS_MASTER_MODE and settings.SCHEDULER_WORKERS > 0:
+        node_type = "both"
+    elif settings.IS_MASTER_MODE:
+        node_type = "master"
+    elif settings.SCHEDULER_WORKERS > 0:
+        node_type = "consumer"
+    else:
+        node_type = "none"
 
     return {
-        "node_type": settings.SCHEDULER_NODE_TYPE,
+        "node_type": node_type,
         "backend_type": backend_type,
         "workers": workers,
         "status": status,

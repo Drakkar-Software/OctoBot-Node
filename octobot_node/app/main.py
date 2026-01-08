@@ -75,7 +75,7 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 # Get the path to the dist folder (works for both development and installed packages)
 DIST_DIR = get_dist_directory()
 
-# Serve static files from the dist folder
+# Serve static files from the dist folder only if UI is enabled
 if DIST_DIR:
     assets_dir = DIST_DIR / "assets"
     if assets_dir.exists():

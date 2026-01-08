@@ -36,10 +36,10 @@ class TestGetNodeStatus:
     ) -> None:
         """Test node status for master node with Redis backend."""
         mock_settings = mocker.patch("octobot_node.scheduler.api.settings")
-        mock_settings.SCHEDULER_NODE_TYPE = "master"
+        mock_settings.IS_MASTER_MODE = True
         mock_settings.SCHEDULER_REDIS_URL = "redis://localhost:6379"
         mock_settings.SCHEDULER_SQLITE_FILE = "tasks.db"
-        mock_settings.SCHEDULER_WORKERS = 4
+        mock_settings.SCHEDULER_WORKERS = 0
 
         mock_consumer = mocker.patch("octobot_node.scheduler.api.CONSUMER")
         mock_consumer.is_started.return_value = False
@@ -56,19 +56,20 @@ class TestGetNodeStatus:
     def test_get_node_status_slave_node_with_sqlite(
         self, mocker: MockerFixture
     ) -> None:
-        """Test node status for slave node with SQLite backend."""
+        """Test node status for consumer node with SQLite backend."""
         mock_settings = mocker.patch("octobot_node.scheduler.api.settings")
-        mock_settings.SCHEDULER_NODE_TYPE = "slave"
+        mock_settings.IS_MASTER_MODE = False
         mock_settings.SCHEDULER_REDIS_URL = None
         mock_settings.SCHEDULER_SQLITE_FILE = "tasks.db"
         mock_settings.SCHEDULER_WORKERS = 4
 
         mock_consumer = mocker.patch("octobot_node.scheduler.api.CONSUMER")
         mock_consumer.is_started.return_value = True
+        mock_consumer.workers = 4
 
         result = get_node_status()
 
-        assert result["node_type"] == "slave"
+        assert result["node_type"] == "consumer"
         assert result["backend_type"] == "sqlite"
         assert result["workers"] == 4
         assert result["status"] == "running"
@@ -78,19 +79,20 @@ class TestGetNodeStatus:
     def test_get_node_status_slave_node_stopped(
         self, mocker: MockerFixture
     ) -> None:
-        """Test node status for slave node when consumer is stopped."""
+        """Test node status for consumer node when consumer is stopped."""
         mock_settings = mocker.patch("octobot_node.scheduler.api.settings")
-        mock_settings.SCHEDULER_NODE_TYPE = "slave"
+        mock_settings.IS_MASTER_MODE = False
         mock_settings.SCHEDULER_REDIS_URL = None
         mock_settings.SCHEDULER_SQLITE_FILE = "tasks.db"
         mock_settings.SCHEDULER_WORKERS = 4
 
         mock_consumer = mocker.patch("octobot_node.scheduler.api.CONSUMER")
         mock_consumer.is_started.return_value = False
+        mock_consumer.workers = 4
 
         result = get_node_status()
 
-        assert result["node_type"] == "slave"
+        assert result["node_type"] == "consumer"
         assert result["status"] == "stopped"
         assert result["workers"] == 4
 
@@ -99,10 +101,10 @@ class TestGetNodeStatus:
     ) -> None:
         """Test that master node is always running regardless of consumer state."""
         mock_settings = mocker.patch("octobot_node.scheduler.api.settings")
-        mock_settings.SCHEDULER_NODE_TYPE = "master"
+        mock_settings.IS_MASTER_MODE = True
         mock_settings.SCHEDULER_REDIS_URL = None
         mock_settings.SCHEDULER_SQLITE_FILE = "tasks.db"
-        mock_settings.SCHEDULER_WORKERS = 4
+        mock_settings.SCHEDULER_WORKERS = 0
 
         mock_consumer = mocker.patch("octobot_node.scheduler.api.CONSUMER")
         mock_consumer.is_started.return_value = False
@@ -110,6 +112,47 @@ class TestGetNodeStatus:
         result = get_node_status()
 
         assert result["status"] == "running"
+        assert result["node_type"] == "master"
+
+    def test_get_node_status_both_master_and_consumers(
+        self, mocker: MockerFixture
+    ) -> None:
+        """Test node status when both master mode and consumers are enabled."""
+        mock_settings = mocker.patch("octobot_node.scheduler.api.settings")
+        mock_settings.IS_MASTER_MODE = True
+        mock_settings.SCHEDULER_REDIS_URL = "redis://localhost:6379"
+        mock_settings.SCHEDULER_SQLITE_FILE = "tasks.db"
+        mock_settings.SCHEDULER_WORKERS = 4
+
+        mock_consumer = mocker.patch("octobot_node.scheduler.api.CONSUMER")
+        mock_consumer.is_started.return_value = True
+        mock_consumer.workers = 4
+
+        result = get_node_status()
+
+        assert result["node_type"] == "both"
+        assert result["backend_type"] == "redis"
+        assert result["workers"] == 4
+        assert result["status"] == "running"
+
+    def test_get_node_status_none(
+        self, mocker: MockerFixture
+    ) -> None:
+        """Test node status when neither master mode nor consumers are enabled."""
+        mock_settings = mocker.patch("octobot_node.scheduler.api.settings")
+        mock_settings.IS_MASTER_MODE = False
+        mock_settings.SCHEDULER_REDIS_URL = None
+        mock_settings.SCHEDULER_SQLITE_FILE = "tasks.db"
+        mock_settings.SCHEDULER_WORKERS = 0
+
+        mock_consumer = mocker.patch("octobot_node.scheduler.api.CONSUMER")
+        mock_consumer.is_started.return_value = False
+
+        result = get_node_status()
+
+        assert result["node_type"] == "none"
+        assert result["status"] == "stopped"
+        assert result["workers"] is None
 
 
 class TestGetTaskMetrics:

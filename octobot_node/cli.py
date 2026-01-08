@@ -30,37 +30,56 @@ from octobot_node import PROJECT_NAME, LONG_VERSION
 
 
 def start_server(args):
-    host = args.host or "0.0.0.0"
     port = args.port or 8000
-    workers = args.workers or 1
-    reload = args.reload or False
     
-    # Reload is only supported with a single worker
-    if reload and workers > 1:
-        print("Warning: --reload is only supported with a single worker. Ignoring --workers option.", file=sys.stderr)
-        workers = 1
+    # This must be done before the scheduler module is imported
+    from octobot_node.app.core.config import settings
     
-    # Import the app here to ensure settings are loaded
+    if args.master:
+        settings.IS_MASTER_MODE = True
+    settings.SCHEDULER_WORKERS = args.consumers
+
+    # Check that the node is either a master node or has consumers enabled
+    if not settings.IS_MASTER_MODE and settings.SCHEDULER_WORKERS <= 0:
+        print(
+            "Error: Node must be either a master node (--master) or have consumers enabled (--consumers N).\n"
+            "  - Use --master to enable master node mode (schedules tasks)\n"
+            "  - Use --consumers N to enable consumer workers (processes tasks)\n"
+            "  - Use both --master --consumers N to enable both modes",
+            file=sys.stderr
+        )
+        sys.exit(1)
+
+    from octobot_node.scheduler import CONSUMER
+    
+    if args.environment is not None:
+        settings.ENVIRONMENT = args.environment
+    
+    if args.admin_username is not None:
+        settings.ADMIN_USERNAME = args.admin_username
+    
+    if args.admin_password is not None:
+        settings.ADMIN_PASSWORD = args.admin_password
+    
+    # If not master mode, bind to localhost only
+    if args.host is not None:
+        host = args.host
+    elif settings.IS_MASTER_MODE and settings.ENVIRONMENT == "production":
+        host = "0.0.0.0"
+    else:
+        host = "127.0.0.1"
+
+    # Ensure settings are loaded
     from octobot_node.app.main import app
     
-    # When using multiple workers, we need to pass the app as a string
-    # When using a single worker, we can pass the app object directly for better reload support
-    if workers > 1:
-        # Use uvicorn with multiple workers
-        uvicorn.run(
-            "octobot_node.app.main:app",
-            host=host,
-            port=port,
-            workers=workers,
-        )
-    else:
-        # Single worker with reload support
-        uvicorn.run(
-            app,
-            host=host,
-            port=port,
-            reload=reload,
-        )
+    uvicorn.run(
+        app,
+        host=host,
+        port=port,
+        reload=settings.ENVIRONMENT == "local",
+        log_level="info",
+        access_log=args.verbose,
+    )
 
 
 def octobot_node_parser(parser):
@@ -83,14 +102,38 @@ def octobot_node_parser(parser):
         default=None
     )
     parser.add_argument(
-        '--workers',
-        help='Number of worker processes (default: 1).',
+        '--master',
+        help='Enable master node mode (schedules tasks, UI enabled by default).',
+        action='store_true'
+    )
+    parser.add_argument(
+        '--consumers',
+        help='Number of consumer worker threads (0 disables consumers, default: 0). Can be used with --master.',
         type=int,
+        default=0
+    )
+    parser.add_argument(
+        '--environment',
+        help='Environment mode: local or production (default: from ENVIRONMENT environment variable). Auto-reload is enabled when environment is local.',
+        type=str,
+        choices=['local', 'production'],
         default=None
     )
     parser.add_argument(
-        '--reload',
-        help='Enable auto-reload for development (default: False).',
+        '--admin-username',
+        help='Admin username (email format). Default: from ADMIN_USERNAME environment variable.',
+        type=str,
+        default=None
+    )
+    parser.add_argument(
+        '--admin-password',
+        help='Admin password. Default: from ADMIN_PASSWORD environment variable.',
+        type=str,
+        default=None
+    )
+    parser.add_argument(
+        '--verbose',
+        help='Enable verbose logging, including HTTP access logs.',
         action='store_true'
     )
     parser.set_defaults(func=start_octobot_node)
