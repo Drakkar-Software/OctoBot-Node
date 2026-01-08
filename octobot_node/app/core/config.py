@@ -85,6 +85,16 @@ class Settings(BaseSettings):
     ADMIN_USERNAME: EmailStr = DEFAULT_ADMIN_USERNAME
     ADMIN_PASSWORD: str = DEFAULT_ADMIN_PASSWORD
 
+    # Will be used to encrypt and decrypt tasks inputs and outputs
+    TASKS_INPUTS_RSA_PRIVATE_KEY: str | None = None
+    TASKS_INPUTS_ECDSA_PUBLIC_KEY: str | None = None
+    TASKS_INPUTS_RSA_PUBLIC_KEY: str | None = None
+    TASKS_INPUTS_ECDSA_PRIVATE_KEY: str | None = None
+    TASKS_OUTPUTS_RSA_PUBLIC_KEY: str | None = None
+    TASKS_OUTPUTS_ECDSA_PRIVATE_KEY: str | None = None
+    TASKS_OUTPUTS_RSA_PRIVATE_KEY: str | None = None
+    TASKS_OUTPUTS_ECDSA_PUBLIC_KEY: str | None = None
+
     def _check_default_secret(self, var_name: str, value: str | None, default_value: EmailStr | None) -> None:
         if value == default_value:
             message = (

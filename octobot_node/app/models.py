@@ -53,6 +53,7 @@ class Task(BaseModel):
     name: typing.Optional[str] = None
     description: typing.Optional[str] = None
     content: typing.Optional[str] = None
+    metadata: typing.Optional[str] = None
     type: typing.Optional[str] = None
     status: typing.Optional[TaskStatus] = None
     result: typing.Optional[str] = None

@@ -18,6 +18,7 @@ export type Task = {
     name?: (string | null);
     description?: (string | null);
     content?: (string | null);
+    metadata?: (string | null);
     type?: (string | null);
     status?: (TaskStatus | null);
     result?: (string | null);
