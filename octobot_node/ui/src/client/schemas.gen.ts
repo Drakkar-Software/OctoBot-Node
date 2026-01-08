@@ -73,7 +73,7 @@ export const TaskSchema = {
             type: 'string',
             format: 'uuid',
             title: 'Id',
-            default: 'a25af7a5-3dc4-4cf1-ac33-0b5c038a18f6'
+            default: '6374b759-34a0-43c9-b4ef-53da77eb2734'
         },
         name: {
             anyOf: [
@@ -107,6 +107,17 @@ export const TaskSchema = {
                 }
             ],
             title: 'Content'
+        },
+        metadata: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Metadata'
         },
         type: {
             anyOf: [

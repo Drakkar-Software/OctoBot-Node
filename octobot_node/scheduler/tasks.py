@@ -15,11 +15,12 @@
 #  License along with OctoBot. If not, see <https://www.gnu.org/licenses/>.
 
 import logging
-import json
-from typing import Optional
 
+from octobot_node.scheduler.encryption import decrypt_task_content
 from octobot_node.scheduler import SCHEDULER
+from octobot_node.app.core.config import settings
 from octobot_node.app.models import Task, TaskType
+
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +34,14 @@ def start_octobot(task: Task):
 
 @SCHEDULER.INSTANCE.task()
 def execute_octobot(task: Task):
-    decrypted_content = decrypt_content(task.content)
+    if settings.TASKS_INPUTS_RSA_PRIVATE_KEY:
+        try:
+            decrypted_content = decrypt_task_content(task.content, task.metadata)
+        except Exception as e:
+            logger.error(f"Failed to decrypt content: {e}")
+            return {"status": "failed", "result": {}, "error": str(e)}
+    else:
+        decrypted_content = task.content
 
     if task.type == TaskType.EXECUTE_ACTIONS.value:
         # TODO start_octobot with actions
@@ -47,10 +55,6 @@ def execute_octobot(task: Task):
 def stop_octobot(task: Task):
     # TODO
     return {"status": "done", "result": {}, "error": None}
-
-def decrypt_content(content: str) -> str:
-    # TODO
-    return content
 
 def trigger_task(task: Task) -> bool:
     if task.type == TaskType.START_OCTOBOT.value:

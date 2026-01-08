@@ -10,3 +10,5 @@ pyjwt
 
 redis
 huey
+
+OctoBot-Commons>=1.10, <1.11
