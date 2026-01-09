@@ -76,7 +76,6 @@ def start_server(args):
         app,
         host=host,
         port=port,
-        reload=settings.ENVIRONMENT == "local",
         log_level="info",
         access_log=args.verbose,
     )

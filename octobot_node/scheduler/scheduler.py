@@ -122,12 +122,16 @@ class Scheduler:
                     description = f"Task completed"
                     status = TaskStatus.COMPLETED
                 
+                result = result_obj.get(TaskResultKeys.RESULT.value)
+                metadata = result_obj.get(TaskResultKeys.METADATA.value)
+
                 tasks.append({
                     "id": task_id,
                     "name": self.get_task_name(result_obj, task_id),
                     "description": description,
                     "status": status,
-                    "result": json.dumps(result_obj),
+                    "result": json.dumps(result),
+                    "result_metadata": metadata,
                     "scheduled_at": None,
                     "started_at": None,
                     "completed_at": None,

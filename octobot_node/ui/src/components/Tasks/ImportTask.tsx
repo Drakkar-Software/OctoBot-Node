@@ -73,7 +73,7 @@ const ImportTask = () => {
         name: task.name,
         content: task.content,
         type: task.type,
-        metadata: task.metadata,
+        content_metadata: task.metadata,
       } as Task))
 
       const [successCount, errorCount] = await createTaskMutation.mutateAsync(tasks)

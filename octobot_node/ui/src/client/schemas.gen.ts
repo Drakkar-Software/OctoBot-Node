@@ -73,7 +73,7 @@ export const TaskSchema = {
             type: 'string',
             format: 'uuid',
             title: 'Id',
-            default: '0628bdd0-1a7d-4f60-aa53-44893c7d4fd1'
+            default: 'ceae23ff-d103-4bae-a676-4ede36cf980c'
         },
         name: {
             anyOf: [
@@ -108,7 +108,7 @@ export const TaskSchema = {
             ],
             title: 'Content'
         },
-        metadata: {
+        content_metadata: {
             anyOf: [
                 {
                     type: 'string'
@@ -117,7 +117,7 @@ export const TaskSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Metadata'
+            title: 'Content Metadata'
         },
         type: {
             anyOf: [
@@ -150,6 +150,17 @@ export const TaskSchema = {
                 }
             ],
             title: 'Result'
+        },
+        result_metadata: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Result Metadata'
         },
         retries: {
             anyOf: [

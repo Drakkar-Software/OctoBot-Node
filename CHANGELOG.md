@@ -1,6 +1,31 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.0.5] - 2026-01-09
+### Added
+- `TaskResultKeys` enum to standardize task result dictionary keys (`status`, `task`, `result`, `error`, `metadata`)
+- `get_task_name()` method in scheduler to extract task names from task data structures
+- Metadata column support in CSV task imports for encrypted task metadata
+- `parse_key_to_bytes()` utility function for automatic encryption key format conversion
+- `EncryptedTask` context manager in `task_context.py` for automatic task content decryption and result encryption
+- `content_metadata` field to Task model for storing encrypted content metadata separately
+- `result` and `result_metadata` fields to Task model for storing encrypted task results and their metadata
+- `METADATA` key to `TaskResultKeys` enum for standardized metadata handling in task results
+
+### Changed
+- Task names now display actual task names instead of task IDs in the UI and API responses
+- Scheduled task descriptions now show ETA timestamp (e.g., "Scheduled at 2026-01-09 10:30:00") instead of generic "Scheduled task" messages
+- Encryption key configuration now accepts both string and bytes formats (automatic conversion via `BeforeValidator`)
+- Encryption metadata now uses base64 encoding/decoding for improved compatibility
+- Task result dictionaries now use standardized `TaskResultKeys` enum values instead of hardcoded strings
+- Logging messages now use task names instead of task IDs for better readability
+- Task result dictionaries now include task name in the `task` field for better traceability
+- Task execution now uses `EncryptedTask` context manager for automatic encryption/decryption handling
+- Task functions now set `task.result` directly instead of returning encrypted result dictionaries
+- Task result dictionaries now use `TaskStatus.COMPLETED` enum value instead of hardcoded "done" string
+- Task result dictionaries now include `metadata` field for encrypted result metadata
+- Task model `metadata` field renamed to `content_metadata` for clarity (input metadata vs result metadata)
+
 ## [0.0.4] - 2026-01-09
 ### Added
 - Task encryption and decryption functionality for task inputs and outputs
