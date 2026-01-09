@@ -18,16 +18,16 @@ import csv
 import json
 from pathlib import Path
 
-from tests.scheduler.task_import.csv_utils import (
+from octobot_node.tools.csv_utils import (
     generate_and_save_keys,
-    merge_and_encrypt_csv,
-    decrypt_csv_file,
     parse_csv,
     merge_csv_columns,
     DEFAULT_KEYS_FILE,
     encrypt_result_csv_file,
     decrypt_result_csv_file,
 )
+from octobot_node.tools.encrypt_csv_tasks import encrypt_csv_file_from_keys_file
+from octobot_node.tools.decrypt_csv_tasks import decrypt_csv_file_from_keys_file
 
 
 class TestCSVEncryption:
@@ -44,24 +44,18 @@ class TestCSVEncryption:
         
         merge_csv_columns(str(test_csv_path), str(merged_csv))
         
-        from octobot_node.app.core.config import settings
-        from tests.scheduler.task_import.csv_utils import set_keys_in_settings
-        set_keys_in_settings(keys_file)
-        
-        assert settings.TASKS_INPUTS_RSA_PUBLIC_KEY is not None, "RSA public key should be set"
-        assert settings.TASKS_INPUTS_ECDSA_PRIVATE_KEY is not None, "ECDSA private key should be set"
-        
-        merge_and_encrypt_csv(
-            str(test_csv_path),
-            str(encrypted_csv),
-            keys_file_path=str(keys_file)
+        encrypt_csv_file_from_keys_file(
+            input_file_path=str(test_csv_path),
+            output_file_path=str(encrypted_csv),
+            keys_file_path=keys_file
         )
         
         assert encrypted_csv.exists(), "Encrypted CSV file should be created"
         
-        decrypt_csv_file(
-            str(encrypted_csv),
-            str(decrypted_csv)
+        decrypt_csv_file_from_keys_file(
+            input_file_path=str(encrypted_csv),
+            output_file_path=str(decrypted_csv),
+            keys_file_path=keys_file
         )
         
         assert decrypted_csv.exists(), "Decrypted CSV file should be created"
@@ -85,7 +79,7 @@ class TestCSVEncryption:
         
         # Set keys in settings
         from octobot_node.app.core.config import settings
-        from tests.scheduler.task_import.csv_utils import set_keys_in_settings
+        from octobot_node.tools.csv_utils import set_keys_in_settings
         set_keys_in_settings(keys_file)
         
         assert settings.TASKS_OUTPUTS_RSA_PUBLIC_KEY is not None, "RSA public key should be set"
