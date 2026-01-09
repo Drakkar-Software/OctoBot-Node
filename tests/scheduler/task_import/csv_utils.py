@@ -24,6 +24,14 @@ from octobot_node.scheduler.encryption.task_inputs import (
     encrypt_task_content,
     decrypt_task_content,
 )
+from octobot_node.scheduler.encryption.task_outputs import (
+    encrypt_task_result,
+    decrypt_task_result,
+)
+from octobot_node.scheduler.encryption.task_outputs import (
+    encrypt_task_result,
+    decrypt_task_result,
+)
 
 ################################################################################
 # This file is used to test the functions inside octobot_node/ui/src/lib/csv.ts
@@ -441,3 +449,113 @@ def merge_and_encrypt_csv(
                 row.get("type", ""),
                 row.get("metadata", "")
             ])
+
+
+def encrypt_result_csv_content(
+    csv_rows: List[Dict[str, str]],
+    result_column: str = "result"
+) -> List[Dict[str, str]]:
+    from octobot_node.app.core.config import settings
+    
+    if settings.TASKS_OUTPUTS_RSA_PUBLIC_KEY is None or settings.TASKS_OUTPUTS_ECDSA_PRIVATE_KEY is None:
+        raise ValueError(
+            f"Encryption keys are not set in settings. "
+            f"TASKS_OUTPUTS_RSA_PUBLIC_KEY={settings.TASKS_OUTPUTS_RSA_PUBLIC_KEY is not None}, "
+            f"TASKS_OUTPUTS_ECDSA_PRIVATE_KEY={settings.TASKS_OUTPUTS_ECDSA_PRIVATE_KEY is not None}. "
+            f"Call set_keys_in_settings() first."
+        )
+    
+    encrypted_rows: List[Dict[str, str]] = []
+    
+    for row in csv_rows:
+        encrypted_row = row.copy()
+        result = row.get(result_column, "")
+        
+        if result:
+            try:
+                encrypted_result, metadata = encrypt_task_result(result)
+                encrypted_row[result_column] = encrypted_result
+                encrypted_row["result_metadata"] = metadata
+            except Exception as e:
+                error_msg = f"Failed to encrypt result for row '{row.get('name', 'unknown')}': {e}"
+                raise Exception(error_msg) from e
+        else:
+            encrypted_row["result_metadata"] = ""
+        
+        encrypted_rows.append(encrypted_row)
+    
+    return encrypted_rows
+
+
+def decrypt_result_csv_content(
+    csv_rows: List[Dict[str, str]],
+    result_column: str = "result",
+    metadata_column: str = "result_metadata"
+) -> List[Dict[str, str]]:
+    decrypted_rows: List[Dict[str, str]] = []
+    
+    for row in csv_rows:
+        decrypted_row = row.copy()
+        encrypted_result = row.get(result_column, "")
+        metadata = row.get(metadata_column, "")
+        
+        if encrypted_result and metadata:
+            try:
+                decrypted_result = decrypt_task_result(encrypted_result, metadata)
+                decrypted_row[result_column] = decrypted_result
+            except Exception as e:
+                print(f"Failed to decrypt result for row '{row.get('name', 'unknown')}': {e}")
+        elif not encrypted_result:
+            pass
+        else:
+            print(f"Warning: Row '{row.get('name', 'unknown')}' has result but no metadata. Skipping decryption.")
+        
+        decrypted_row.pop(metadata_column, None)
+        decrypted_rows.append(decrypted_row)
+    
+    return decrypted_rows
+
+
+def encrypt_result_csv_file(
+    input_file_path: str,
+    output_file_path: str,
+    result_column: str = "result"
+) -> None:
+    rows = []
+    with open(input_file_path, 'r', encoding='utf-8', newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            rows.append(dict(row))
+    
+    encrypted_rows = encrypt_result_csv_content(rows, result_column)
+    headers = list(rows[0].keys()) if rows else ["name", result_column]
+    if "result_metadata" not in headers:
+        headers.append("result_metadata")
+    
+    with open(output_file_path, 'w', encoding='utf-8', newline='') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=headers)
+        writer.writeheader()
+        for row in encrypted_rows:
+            writer.writerow(row)
+
+
+def decrypt_result_csv_file(
+    input_file_path: str,
+    output_file_path: str,
+    result_column: str = "result",
+    metadata_column: str = "result_metadata"
+) -> None:
+    rows = []
+    with open(input_file_path, 'r', encoding='utf-8', newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            rows.append(dict(row))
+    
+    decrypted_rows = decrypt_result_csv_content(rows, result_column, metadata_column)
+    headers = [col for col in (list(rows[0].keys()) if rows else ["name", result_column]) if col != metadata_column]
+    
+    with open(output_file_path, 'w', encoding='utf-8', newline='') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=headers)
+        writer.writeheader()
+        for row in decrypted_rows:
+            writer.writerow({k: v for k, v in row.items() if k in headers})
