@@ -579,11 +579,26 @@ def decrypt_result_csv_content(
         if encrypted_result and metadata:
             try:
                 decrypted_result = decrypt_task_result(encrypted_result, metadata)
-                decrypted_row[result_column] = decrypted_result
+                result_dict = decrypted_result if isinstance(decrypted_result, dict) else None
+                if result_dict is None:
+                    try:
+                        parsed = json.loads(decrypted_result)
+                        result_dict = parsed if isinstance(parsed, dict) else None
+                    except (json.JSONDecodeError, TypeError, AttributeError):
+                        pass
+                
+                if result_dict:
+                    # Split dict into separate columns
+                    for key, value in result_dict.items():
+                        decrypted_row[key] = json.dumps(value) if isinstance(value, (dict, list)) else str(value)
+                    decrypted_row.pop(result_column, None)
+                else:
+                    decrypted_row[result_column] = decrypted_result
             except Exception as e:
                 print(f"Failed to decrypt result for row '{row.get('name', 'unknown')}': {e}")
         elif not encrypted_result:
-            pass
+            # Remove result column if it exists but is empty
+            decrypted_row.pop(result_column, None)
         else:
             print(f"Warning: Row '{row.get('name', 'unknown')}' has result but no metadata. Skipping decryption.")
         
@@ -629,7 +644,26 @@ def decrypt_result_csv_file(
             rows.append(dict(row))
     
     decrypted_rows = decrypt_result_csv_content(rows, result_column, metadata_column)
-    headers = [col for col in (list(rows[0].keys()) if rows else ["name", result_column]) if col != metadata_column]
+    
+    all_headers = set()
+    for row in decrypted_rows:
+        all_headers.update(row.keys())
+    
+    original_headers = [col for col in (list(rows[0].keys()) if rows else ["name", result_column]) if col != metadata_column]
+    headers = []
+    seen = set()
+    
+    for col in original_headers:
+        if col != result_column and col in all_headers:
+            headers.append(col)
+            seen.add(col)
+    
+    if result_column in all_headers and result_column not in seen:
+        headers.append(result_column)
+        seen.add(result_column)
+    
+    for col in sorted(all_headers - seen):
+        headers.append(col)
     
     with open(output_file_path, 'w', encoding='utf-8', newline='') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=headers)

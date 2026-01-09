@@ -137,7 +137,16 @@ class TestCSVEncryption:
         
         for original_row, decrypted_row in zip(original_rows, decrypted_rows):
             assert original_row["name"] == decrypted_row["name"], "Names should match"
-            # Parse JSON results to compare
             original_result = json.loads(original_row["result"])
-            decrypted_result = json.loads(decrypted_row["result"])
-            assert original_result == decrypted_result, "Results should match after decryption"
+            assert "result" not in decrypted_row, "Result column should be split into separate columns"
+            for key, value in original_result.items():
+                assert key in decrypted_row, f"Column '{key}' should exist in decrypted row"
+                decrypted_value_str = decrypted_row[key]
+                if isinstance(value, (dict, list)):
+                    decrypted_value = json.loads(decrypted_value_str)
+                else:
+                    try:
+                        decrypted_value = json.loads(decrypted_value_str)
+                    except (json.JSONDecodeError, ValueError):
+                        decrypted_value = decrypted_value_str
+                assert decrypted_value == value, f"Value for '{key}' should match: expected {value}, got {decrypted_value}"
