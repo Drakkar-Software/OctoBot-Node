@@ -49,6 +49,14 @@ def parse_cors(v: Any) -> list[str] | str:
     raise ValueError(v)
 
 
+def parse_key_to_bytes(v: str | bytes | None) -> bytes | None:
+    if v is None:
+        return None
+    if isinstance(v, bytes):
+        return v
+    return v.encode('utf-8')
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         # Use .env.test when running tests, otherwise use .env
@@ -85,15 +93,17 @@ class Settings(BaseSettings):
     ADMIN_USERNAME: EmailStr = DEFAULT_ADMIN_USERNAME
     ADMIN_PASSWORD: str = DEFAULT_ADMIN_PASSWORD
 
-    # Will be used to encrypt and decrypt tasks inputs and outputs
-    TASKS_INPUTS_RSA_PRIVATE_KEY: str | None = None
-    TASKS_INPUTS_ECDSA_PUBLIC_KEY: str | None = None
-    TASKS_INPUTS_RSA_PUBLIC_KEY: str | None = None
-    TASKS_INPUTS_ECDSA_PRIVATE_KEY: str | None = None
-    TASKS_OUTPUTS_RSA_PUBLIC_KEY: str | None = None
-    TASKS_OUTPUTS_ECDSA_PRIVATE_KEY: str | None = None
-    TASKS_OUTPUTS_RSA_PRIVATE_KEY: str | None = None
-    TASKS_OUTPUTS_ECDSA_PUBLIC_KEY: str | None = None
+    # Used to decrypt inputs and encrypt outputs
+    TASKS_INPUTS_RSA_PRIVATE_KEY: Annotated[bytes | None, BeforeValidator(parse_key_to_bytes)] = None
+    TASKS_INPUTS_ECDSA_PUBLIC_KEY: Annotated[bytes | None, BeforeValidator(parse_key_to_bytes)] = None
+    TASKS_OUTPUTS_RSA_PUBLIC_KEY: Annotated[bytes | None, BeforeValidator(parse_key_to_bytes)] = None
+    TASKS_OUTPUTS_ECDSA_PRIVATE_KEY: Annotated[bytes | None, BeforeValidator(parse_key_to_bytes)] = None
+
+    # Used to encrypt inputs and decrypt outputs
+    TASKS_INPUTS_RSA_PUBLIC_KEY: Annotated[bytes | None, BeforeValidator(parse_key_to_bytes)] = None
+    TASKS_INPUTS_ECDSA_PRIVATE_KEY: Annotated[bytes | None, BeforeValidator(parse_key_to_bytes)] = None
+    TASKS_OUTPUTS_RSA_PRIVATE_KEY: Annotated[bytes | None, BeforeValidator(parse_key_to_bytes)] = None
+    TASKS_OUTPUTS_ECDSA_PUBLIC_KEY: Annotated[bytes | None, BeforeValidator(parse_key_to_bytes)] = None
 
     def _check_default_secret(self, var_name: str, value: str | None, default_value: EmailStr | None) -> None:
         if value == default_value:

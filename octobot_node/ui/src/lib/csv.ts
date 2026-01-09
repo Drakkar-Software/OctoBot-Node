@@ -2,11 +2,13 @@ export interface CSVRow {
   name: string;
   content: string;
   type: string;
+  metadata?: string;
 }
 
 const COLUMN_NAME = "name";
 const COLUMN_CONTENT = "content";
 const COLUMN_TYPE = "type";
+const COLUMN_METADATA = "metadata";
 const CONTENT_SEPARATOR = ";";
 
 /**
@@ -17,9 +19,10 @@ const REQUIRED_KEYS = [COLUMN_NAME, COLUMN_TYPE];
 
 /**
  * List of column names that should be extracted separately and kept outside of content.
- * These columns will be available as KEY=VALUE pairs
+ * These columns will be available as KEY=VALUE pairs.
+ * Each key should be present in the CSVRow interface and added to the `processRow` return value.
  */
-const KEYS_OUTSIDE_CONTENT = [COLUMN_NAME, COLUMN_TYPE];
+const KEYS_OUTSIDE_CONTENT = [COLUMN_NAME, COLUMN_TYPE, COLUMN_METADATA];
 
 function parseCSVLine(line: string): Array<string> {
   const values: Array<string> = new Array<string>();
@@ -190,6 +193,7 @@ function processRow(
     name: keysOutsideContentValues.get(COLUMN_NAME) || "",
     content: finalContent,
     type: keysOutsideContentValues.get(COLUMN_TYPE) || "",
+    metadata: keysOutsideContentValues.get(COLUMN_METADATA) || "",
   };
 }
 
