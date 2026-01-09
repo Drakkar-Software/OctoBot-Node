@@ -16,9 +16,9 @@
 #  License along with this library.
 
 """
-CLI script to decrypt CSV task files using RSA private key and ECDSA public key.
+CLI script to decrypt CSV results files using RSA private key and ECDSA public key.
 
-This script takes an encrypted CSV task file as input, decrypts the content column using the provided
+This script takes an encrypted CSV results file as input, decrypts the result column using the provided
 RSA private key and ECDSA public key, and outputs a decrypted CSV file.
 """
 
@@ -29,7 +29,7 @@ from typing import Optional
 
 from octobot_node.app.core.config import settings
 from octobot_node.tools.csv_utils import (
-    decrypt_csv_file,
+    decrypt_result_csv_file,
     load_keys,
     KEY_NAMES,
     set_key_from_file_or_env,
@@ -58,14 +58,14 @@ def set_keys_in_settings(
     """
     set_key_from_file_or_env(
         rsa_private_key_path,
-        "TASKS_INPUTS_RSA_PRIVATE_KEY",
-        "TASKS_INPUTS_RSA_PRIVATE_KEY",
+        "TASKS_OUTPUTS_RSA_PRIVATE_KEY",
+        "TASKS_OUTPUTS_RSA_PRIVATE_KEY",
         "RSA private key"
     )
     set_key_from_file_or_env(
         ecdsa_public_key_path,
-        "TASKS_INPUTS_ECDSA_PUBLIC_KEY",
-        "TASKS_INPUTS_ECDSA_PUBLIC_KEY",
+        "TASKS_OUTPUTS_ECDSA_PUBLIC_KEY",
+        "TASKS_OUTPUTS_ECDSA_PUBLIC_KEY",
         "ECDSA public key"
     )
 
@@ -89,18 +89,18 @@ def decrypt_csv_file_tool(
     output_file_path: str,
     rsa_private_key_path: Optional[str] = None,
     ecdsa_public_key_path: Optional[str] = None,
-    content_column: str = "content",
-    metadata_column: str = "metadata"
+    result_column: str = "result",
+    metadata_column: str = "result_metadata"
 ) -> None:
-    """Decrypt a CSV task file and write the decrypted version to output file.
+    """Decrypt a CSV results file and write the decrypted version to output file.
     
     Args:
-        input_file_path: Path to the input encrypted CSV task file
+        input_file_path: Path to the input encrypted CSV results file
         output_file_path: Path to the output decrypted CSV file
         rsa_private_key_path: Optional path to the RSA private key file
         ecdsa_public_key_path: Optional path to the ECDSA public key file
-        content_column: Name of the column containing encrypted content (default: 'content')
-        metadata_column: Name of the column containing metadata (default: 'metadata')
+        result_column: Name of the column containing encrypted result (default: 'result')
+        metadata_column: Name of the column containing metadata (default: 'result_metadata')
         
     Raises:
         FileNotFoundError: If input file or key files don't exist
@@ -112,18 +112,18 @@ def decrypt_csv_file_tool(
     
     set_keys_in_settings(rsa_private_key_path, ecdsa_public_key_path)
     
-    if settings.TASKS_INPUTS_RSA_PRIVATE_KEY is None or settings.TASKS_INPUTS_ECDSA_PUBLIC_KEY is None:
+    if settings.TASKS_OUTPUTS_RSA_PRIVATE_KEY is None or settings.TASKS_OUTPUTS_ECDSA_PUBLIC_KEY is None:
         raise ValueError(
             f"Decryption keys are not set in settings. "
-            f"TASKS_INPUTS_RSA_PRIVATE_KEY={settings.TASKS_INPUTS_RSA_PRIVATE_KEY is not None}, "
-            f"TASKS_INPUTS_ECDSA_PUBLIC_KEY={settings.TASKS_INPUTS_ECDSA_PUBLIC_KEY is not None}."
+            f"TASKS_OUTPUTS_RSA_PRIVATE_KEY={settings.TASKS_OUTPUTS_RSA_PRIVATE_KEY is not None}, "
+            f"TASKS_OUTPUTS_ECDSA_PUBLIC_KEY={settings.TASKS_OUTPUTS_ECDSA_PUBLIC_KEY is not None}."
         )
     
-    print(f"Decrypting CSV task file: {input_file_path}")
-    decrypt_csv_file(
+    print(f"Decrypting CSV results file: {input_file_path}")
+    decrypt_result_csv_file(
         input_file_path=input_file_path,
         output_file_path=output_file_path,
-        content_column=content_column,
+        result_column=result_column,
         metadata_column=metadata_column
     )
     print(f"Successfully decrypted CSV and saved to: {output_file_path}")
@@ -136,28 +136,28 @@ def set_keys_in_settings_from_strings(rsa_private_key: str, ecdsa_public_key: st
         rsa_private_key: RSA private key as string (PEM format)
         ecdsa_public_key: ECDSA public key as string (PEM format)
     """
-    set_key_from_string(rsa_private_key, "TASKS_INPUTS_RSA_PRIVATE_KEY")
-    set_key_from_string(ecdsa_public_key, "TASKS_INPUTS_ECDSA_PUBLIC_KEY")
+    set_key_from_string(rsa_private_key, "TASKS_OUTPUTS_RSA_PRIVATE_KEY")
+    set_key_from_string(ecdsa_public_key, "TASKS_OUTPUTS_ECDSA_PUBLIC_KEY")
 
 
 def decrypt_csv_file_from_keys_file(
     input_file_path: str,
     output_file_path: str,
     keys_file_path: str,
-    content_column: str = "content",
-    metadata_column: str = "metadata"
+    result_column: str = "result",
+    metadata_column: str = "result_metadata"
 ) -> None:
-    """Decrypt a CSV task file using keys from a JSON keys file.
+    """Decrypt a CSV results file using keys from a JSON keys file.
     
     This is a convenience function that extracts RSA private key and ECDSA public key
-    from a JSON keys file and decrypts the CSV task file.
+    from a JSON keys file and decrypts the CSV results file.
     
     Args:
-        input_file_path: Path to the input encrypted CSV task file
+        input_file_path: Path to the input encrypted CSV results file
         output_file_path: Path to the output decrypted CSV file
         keys_file_path: Path to the JSON keys file
-        content_column: Name of the column containing encrypted content (default: 'content')
-        metadata_column: Name of the column containing metadata (default: 'metadata')
+        result_column: Name of the column containing encrypted result (default: 'result')
+        metadata_column: Name of the column containing metadata (default: 'result_metadata')
         
     Raises:
         FileNotFoundError: If input file or keys file doesn't exist
@@ -166,8 +166,8 @@ def decrypt_csv_file_from_keys_file(
     """
     keys = load_keys(keys_file_path)
     
-    rsa_private_key_str = keys.get(KEY_NAMES["TASKS_INPUTS_RSA_PRIVATE_KEY"])
-    ecdsa_public_key_str = keys.get(KEY_NAMES["TASKS_INPUTS_ECDSA_PUBLIC_KEY"])
+    rsa_private_key_str = keys.get(KEY_NAMES["TASKS_OUTPUTS_RSA_PRIVATE_KEY"])
+    ecdsa_public_key_str = keys.get(KEY_NAMES["TASKS_OUTPUTS_ECDSA_PUBLIC_KEY"])
     
     if not rsa_private_key_str or not ecdsa_public_key_str:
         raise ValueError(
@@ -178,18 +178,18 @@ def decrypt_csv_file_from_keys_file(
     
     set_keys_in_settings_from_strings(rsa_private_key_str, ecdsa_public_key_str)
     
-    if settings.TASKS_INPUTS_RSA_PRIVATE_KEY is None or settings.TASKS_INPUTS_ECDSA_PUBLIC_KEY is None:
+    if settings.TASKS_OUTPUTS_RSA_PRIVATE_KEY is None or settings.TASKS_OUTPUTS_ECDSA_PUBLIC_KEY is None:
         raise ValueError(
             f"Decryption keys are not set in settings. "
-            f"TASKS_INPUTS_RSA_PRIVATE_KEY={settings.TASKS_INPUTS_RSA_PRIVATE_KEY is not None}, "
-            f"TASKS_INPUTS_ECDSA_PUBLIC_KEY={settings.TASKS_INPUTS_ECDSA_PUBLIC_KEY is not None}."
+            f"TASKS_OUTPUTS_RSA_PRIVATE_KEY={settings.TASKS_OUTPUTS_RSA_PRIVATE_KEY is not None}, "
+            f"TASKS_OUTPUTS_ECDSA_PUBLIC_KEY={settings.TASKS_OUTPUTS_ECDSA_PUBLIC_KEY is not None}."
         )
     
-    print(f"Decrypting CSV task file: {input_file_path}")
-    decrypt_csv_file(
+    print(f"Decrypting CSV results file: {input_file_path}")
+    decrypt_result_csv_file(
         input_file_path=input_file_path,
         output_file_path=output_file_path,
-        content_column=content_column,
+        result_column=result_column,
         metadata_column=metadata_column
     )
     print(f"Successfully decrypted CSV and saved to: {output_file_path}")
@@ -198,20 +198,20 @@ def decrypt_csv_file_from_keys_file(
 def main() -> None:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
-        description="Decrypt CSV task files using RSA private key and ECDSA public key",
+        description="Decrypt CSV results files using RSA private key and ECDSA public key",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s encrypted_tasks.csv --rsa-private-key rsa_private.pem --ecdsa-public-key ecdsa_public.pem
-  %(prog)s encrypted_tasks.csv --rsa-private-key rsa_private.pem --ecdsa-public-key ecdsa_public.pem --output decrypted_tasks.csv
-  %(prog)s encrypted_tasks.csv  # Uses TASKS_INPUTS_RSA_PRIVATE_KEY and TASKS_INPUTS_ECDSA_PUBLIC_KEY environment variables
+  %(prog)s encrypted_results.csv --rsa-private-key rsa_private.pem --ecdsa-public-key ecdsa_public.pem
+  %(prog)s encrypted_results.csv --rsa-private-key rsa_private.pem --ecdsa-public-key ecdsa_public.pem --output decrypted_results.csv
+  %(prog)s encrypted_results.csv  # Uses TASKS_OUTPUTS_RSA_PRIVATE_KEY and TASKS_OUTPUTS_ECDSA_PUBLIC_KEY environment variables
         """
     )
     
     parser.add_argument(
         "csv_file",
         type=str,
-        help="Path to the input encrypted CSV task file to decrypt"
+        help="Path to the input encrypted CSV results file to decrypt"
     )
     
     parser.add_argument(
@@ -219,7 +219,7 @@ Examples:
         type=str,
         required=False,
         default=None,
-        help="Path to the RSA private key file (PEM format). If not provided, will use TASKS_INPUTS_RSA_PRIVATE_KEY environment variable."
+        help="Path to the RSA private key file (PEM format). If not provided, will use TASKS_OUTPUTS_RSA_PRIVATE_KEY environment variable."
     )
     
     parser.add_argument(
@@ -227,7 +227,7 @@ Examples:
         type=str,
         required=False,
         default=None,
-        help="Path to the ECDSA public key file (PEM format). If not provided, will use TASKS_INPUTS_ECDSA_PUBLIC_KEY environment variable."
+        help="Path to the ECDSA public key file (PEM format). If not provided, will use TASKS_OUTPUTS_ECDSA_PUBLIC_KEY environment variable."
     )
     
     parser.add_argument(
@@ -239,17 +239,17 @@ Examples:
     )
     
     parser.add_argument(
-        "--content-column",
+        "--result-column",
         type=str,
-        default="content",
-        help="Name of the column containing encrypted content (default: 'content')"
+        default="result",
+        help="Name of the column containing encrypted result (default: 'result')"
     )
     
     parser.add_argument(
         "--metadata-column",
         type=str,
-        default="metadata",
-        help="Name of the column containing metadata (default: 'metadata')"
+        default="result_metadata",
+        help="Name of the column containing metadata (default: 'result_metadata')"
     )
     
     args = parser.parse_args()
@@ -265,7 +265,7 @@ Examples:
             output_file_path=output_file_path,
             rsa_private_key_path=args.rsa_private_key,
             ecdsa_public_key_path=args.ecdsa_public_key,
-            content_column=args.content_column,
+            result_column=args.result_column,
             metadata_column=args.metadata_column
         )
         print("\nDecryption completed successfully!")
