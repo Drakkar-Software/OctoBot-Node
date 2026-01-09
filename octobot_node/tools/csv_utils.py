@@ -17,6 +17,7 @@
 import csv
 import json
 import os
+from pathlib import Path
 from typing import Dict, List, Optional
 
 import octobot_commons.cryptography as cryptography
@@ -59,6 +60,71 @@ KEY_NAMES = {
     "TASKS_OUTPUTS_ECDSA_PUBLIC_KEY": "tasks_outputs_ecdsa_public_key",
     "TASKS_OUTPUTS_ECDSA_PRIVATE_KEY": "tasks_outputs_ecdsa_private_key",
 }
+
+
+def load_key_file(key_file_path: str) -> bytes:
+    """Load a key from a PEM file.
+    
+    Args:
+        key_file_path: Path to the key file
+        
+    Returns:
+        The key content as bytes
+        
+    Raises:
+        FileNotFoundError: If the key file doesn't exist
+        IOError: If the key file cannot be read
+    """
+    key_path = Path(key_file_path)
+    if not key_path.exists():
+        raise FileNotFoundError(f"Key file not found: {key_file_path}")
+    
+    try:
+        with open(key_path, 'rb') as f:
+            key_content = f.read()
+        return key_content
+    except IOError as e:
+        raise IOError(f"Failed to read key file {key_file_path}: {e}") from e
+
+
+def set_key_from_file_or_env(
+    key_file_path: Optional[str],
+    settings_key_name: str,
+    env_var_name: str,
+    key_display_name: str
+) -> None:
+    """Load a key from a file or environment variable and set it in settings.
+    
+    Priority order:
+    1. File path (if provided)
+    2. Environment variable (loaded automatically by settings system if file path not provided)
+    
+    Args:
+        key_file_path: Optional path to the key file
+        settings_key_name: Name of the settings attribute to set (e.g., 'TASKS_INPUTS_RSA_PUBLIC_KEY')
+        env_var_name: Name of the environment variable (for error messages)
+        key_display_name: Display name for the key (for user messages)
+        
+    Raises:
+        FileNotFoundError: If a key file path is provided but doesn't exist
+        IOError: If a key file cannot be read
+        ValueError: If neither file path nor environment variable is available
+    """
+    from octobot_node.app.core.config import settings
+    
+    if key_file_path:
+        key = load_key_file(key_file_path)
+        setattr(settings, settings_key_name, key)
+        print(f"Successfully loaded {key_display_name} from file: {key_file_path}")
+    else:
+        # Settings system automatically loads from environment variable
+        key_value = getattr(settings, settings_key_name, None)
+        if key_value:
+            print(f"Using {key_display_name} from environment variable: {env_var_name}")
+        else:
+            raise ValueError(
+                f"{key_display_name} not found. Provide file path or set {env_var_name} environment variable."
+            )
 
 
 def find_column_index(column_names: List[str], key: str) -> int:
@@ -272,6 +338,17 @@ def load_keys(keys_file_path: str = DEFAULT_KEYS_FILE) -> Dict[str, str]:
     
     with open(keys_file_path, 'r', encoding='utf-8') as f:
         return json.load(f)
+
+
+def set_key_from_string(key_string: str, settings_key_name: str) -> None:
+    """Set a key in settings from a string value (e.g., from JSON keys file).
+    
+    Args:
+        key_string: Key as string (PEM format)
+        settings_key_name: Name of the settings attribute to set
+    """
+    from octobot_node.app.core.config import settings
+    setattr(settings, settings_key_name, key_string.encode('utf-8') if key_string else None)
 
 
 def set_keys_in_settings(keys_file_path: str = DEFAULT_KEYS_FILE) -> None:
