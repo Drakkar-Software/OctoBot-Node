@@ -23,6 +23,7 @@ import pickle
 import json
 from octobot_node.app.models import Task, TaskType, TaskStatus
 from octobot_node.app.core.config import settings
+from octobot_node.app.enums import TaskResultKeys
 
 DEFAULT_NAME = "octobot_node"
 
@@ -71,7 +72,7 @@ class Scheduler:
             try:
                 tasks.append(self._parse_task(task, TaskStatus.PERIODIC, f"Periodic task: {task.name}"))
             except Exception as e:
-                self.logger.warning("Failed to process periodic task %s: %s", task.id, e)
+                self.logger.warning(f"Failed to process periodic task {task.name}: {e}")
         return tasks
 
     def get_pending_tasks(self) -> list[dict]:
@@ -81,7 +82,7 @@ class Scheduler:
             try:
                 tasks.append(self._parse_task(task, TaskStatus.PENDING, f"Pending task: {task.name}"))
             except Exception as e:
-                self.logger.warning("Failed to process pending task %s: %s", task.id, e)
+                self.logger.warning(f"Failed to process pending task {task.name}: {e}")
         return tasks
 
     def get_scheduled_tasks(self) -> list[dict]:
@@ -89,9 +90,9 @@ class Scheduler:
         scheduled_tasks = self.INSTANCE.scheduled()
         for task in scheduled_tasks or []:
             try:
-                tasks.append(self._parse_task(task, TaskStatus.SCHEDULED, f"Scheduled task: {task.name}"))
+                tasks.append(self._parse_task(task, TaskStatus.SCHEDULED, f"Scheduled at {task.eta.strftime('%Y-%m-%d %H:%M:%S')}"))
             except Exception as e:
-                self.logger.warning(f"Failed to process scheduled task {task.id}: {e}")
+                self.logger.warning(f"Failed to process scheduled task {task.name}: {e}")
         return tasks
 
     def _decode_result(self, result_key_bytes: bytes | str, result_value_bytes: bytes | Any) -> tuple[str, Any | None]:
@@ -123,7 +124,7 @@ class Scheduler:
                 
                 tasks.append({
                     "id": task_id,
-                    "name": task_id,
+                    "name": self.get_task_name(result_obj, task_id),
                     "description": description,
                     "status": status,
                     "result": json.dumps(result_obj),
@@ -138,12 +139,14 @@ class Scheduler:
 
     def _parse_task(self, message: Message, status: TaskStatus, description: Optional[str] = None) -> Task:
         task_kwargs = message.kwargs
+        task_args = message.args
         task_actions = task_kwargs.get("actions")
         task_type = task_kwargs.get("type")
+        task_name = self.get_task_name(task_args[0] if task_args and len(task_args) > 0 else {}, message.name)
 
         return Task(
             id=message.id,
-            name=message.name,
+            name=task_name,
             description=description,
             actions=task_actions,
             type=TaskType(task_type) if task_type else None,
@@ -164,3 +167,11 @@ class Scheduler:
 
     def get_data(self, key: str) -> str:
         return self.INSTANCE.storage.peek_data(key)
+
+    def get_task_name(self, task_data: dict | Task | None, default_value: Optional[str] = None) -> Optional[str]:
+        if isinstance(task_data, Task):
+            return task_data.name
+        elif isinstance(task_data, dict):
+            return task_data.get(TaskResultKeys.TASK.value, {}).get("name", default_value)
+        else:
+            return default_value

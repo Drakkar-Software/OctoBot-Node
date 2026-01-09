@@ -20,6 +20,7 @@ from octobot_node.scheduler.encryption import decrypt_task_content
 from octobot_node.scheduler import SCHEDULER
 from octobot_node.app.core.config import settings
 from octobot_node.app.models import Task, TaskType
+from octobot_node.app.enums import TaskResultKeys
 
 
 logger = logging.getLogger(__name__)
@@ -29,7 +30,12 @@ logger = logging.getLogger(__name__)
 @SCHEDULER.INSTANCE.task()
 def start_octobot(task: Task):
     # TODO
-    return {"status": "done", "result": {}, "error": None}
+    return {
+        TaskResultKeys.STATUS.value: "done", 
+        TaskResultKeys.TASK.value: {"name": task.name}, 
+        TaskResultKeys.RESULT.value: {}, 
+        TaskResultKeys.ERROR.value: None
+    }
 
 
 @SCHEDULER.INSTANCE.task()
@@ -39,14 +45,24 @@ def execute_octobot(task: Task):
             decrypted_content = decrypt_task_content(task.content, task.metadata)
         except Exception as e:
             logger.error(f"Failed to decrypt content: {e}")
-            return {"status": "failed", "result": {}, "error": str(e)}
+            return {
+                TaskResultKeys.STATUS.value: "failed", 
+                TaskResultKeys.TASK.value: {"name": task.name}, 
+                TaskResultKeys.RESULT.value: {}, 
+                TaskResultKeys.ERROR.value: str(e)
+            }
     else:
         decrypted_content = task.content
 
     if task.type == TaskType.EXECUTE_ACTIONS.value:
         # TODO start_octobot with actions
         print(f"Executing actions with content: {decrypted_content}...")
-        return {"status": "done", "result": {}, "error": None}
+        return {
+            TaskResultKeys.STATUS.value: "done", 
+            TaskResultKeys.TASK.value: {"name": task.name}, 
+            TaskResultKeys.RESULT.value: {}, 
+            TaskResultKeys.ERROR.value: None
+        }
     else:
         raise ValueError(f"Invalid task type: {type}")
 
@@ -54,7 +70,7 @@ def execute_octobot(task: Task):
 @SCHEDULER.INSTANCE.task()
 def stop_octobot(task: Task):
     # TODO
-    return {"status": "done", "result": {}, "error": None}
+    return {TaskResultKeys.STATUS.value: "done", TaskResultKeys.TASK.value: {"name": task.name}, TaskResultKeys.RESULT.value: {}, TaskResultKeys.ERROR.value: None}
 
 def trigger_task(task: Task) -> bool:
     if task.type == TaskType.START_OCTOBOT.value:
