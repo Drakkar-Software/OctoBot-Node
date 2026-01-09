@@ -14,8 +14,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-import os
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -26,6 +24,7 @@ from tests.scheduler.task_import.csv_utils import (
     decrypt_csv_file,
     parse_csv,
     merge_csv_columns,
+    DEFAULT_KEYS_FILE,
 )
 
 
@@ -33,18 +32,19 @@ class TestCSVEncryption:
     def test_encrypt_and_decrypt_csv(self, tmp_path: Path) -> None:
         test_dir = Path(__file__).parent
         test_csv_path = test_dir / "test-tasks.csv"
-        keys_file = tmp_path / "test_keys.json"
+        keys_file = str(test_dir / DEFAULT_KEYS_FILE)
+        
         encrypted_csv = test_dir / "encrypted_tasks.csv"
         decrypted_csv = tmp_path / "decrypted_tasks.csv"
         merged_csv = tmp_path / "merged_tasks.csv"
         
-        generate_and_save_keys(str(keys_file))
+        generate_and_save_keys(keys_file)
         
         merge_csv_columns(str(test_csv_path), str(merged_csv))
         
         from octobot_node.app.core.config import settings
         from tests.scheduler.task_import.csv_utils import set_keys_in_settings
-        set_keys_in_settings(str(keys_file))
+        set_keys_in_settings(keys_file)
         
         assert settings.TASKS_INPUTS_RSA_PUBLIC_KEY is not None, "RSA public key should be set"
         assert settings.TASKS_INPUTS_ECDSA_PRIVATE_KEY is not None, "ECDSA private key should be set"

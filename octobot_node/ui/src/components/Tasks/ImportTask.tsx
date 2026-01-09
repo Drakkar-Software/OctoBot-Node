@@ -71,8 +71,9 @@ const ImportTask = () => {
     try {
       const tasks = parsedTasks.map(task => ({
         name: task.name,
-        content: task.content || "",
-        type: task.type || "",
+        content: task.content,
+        type: task.type,
+        metadata: task.metadata,
       } as Task))
 
       const [successCount, errorCount] = await createTaskMutation.mutateAsync(tasks)

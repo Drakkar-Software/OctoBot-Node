@@ -35,7 +35,7 @@ def decrypt_task_content(content: str, metadata: Optional[str] = None) -> str:
         raise MissingMetadataError("No metadata provided for content decryption")
 
     try:
-        metadata = json.loads(metadata)
+        metadata = json.loads(base64.b64decode(metadata).decode('utf-8'))
         encrypted_aes_key_b64 = metadata.get(ENCRYPTED_AES_KEY_B64_METADATA_KEY, None)
         iv_b64 = metadata.get(IV_B64_METADATA_KEY, None)
         signature_b64 = metadata.get(SIGNATURE_B64_METADATA_KEY, None)
@@ -91,4 +91,6 @@ def encrypt_task_content(content: str) -> Tuple[str, str]:
         SIGNATURE_B64_METADATA_KEY: base64.b64encode(signature).decode('utf-8'),
     }
     encrypted_content_b64 = base64.b64encode(encrypted_content).decode('utf-8')
-    return encrypted_content_b64, json.dumps(metadata)
+    metadata_json = json.dumps(metadata)
+    metadata_b64 = base64.b64encode(metadata_json.encode('utf-8')).decode('utf-8')
+    return encrypted_content_b64, metadata_b64
