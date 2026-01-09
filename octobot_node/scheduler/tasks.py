@@ -14,63 +14,61 @@
 #  You should have received a copy of the GNU General Public
 #  License along with OctoBot. If not, see <https://www.gnu.org/licenses/>.
 
-import logging
-
-from octobot_node.scheduler.encryption import decrypt_task_content
 from octobot_node.scheduler import SCHEDULER
-from octobot_node.app.core.config import settings
+from octobot_node.scheduler.task_context import encrypted_task
 from octobot_node.app.models import Task, TaskType
 from octobot_node.app.enums import TaskResultKeys
-
-
-logger = logging.getLogger(__name__)
-
+from octobot_node.app.models import TaskStatus
 
 
 @SCHEDULER.INSTANCE.task()
 def start_octobot(task: Task):
-    # TODO
+    with encrypted_task(task):
+        # TODO
+        task.result = "ok"
     return {
-        TaskResultKeys.STATUS.value: "done", 
-        TaskResultKeys.TASK.value: {"name": task.name}, 
-        TaskResultKeys.RESULT.value: {}, 
+        TaskResultKeys.STATUS.value: TaskStatus.COMPLETED.value,
+        TaskResultKeys.RESULT.value: task.result, 
+        TaskResultKeys.METADATA.value: task.result_metadata,
+        TaskResultKeys.TASK.value: {"name": task.name},
         TaskResultKeys.ERROR.value: None
     }
 
 
 @SCHEDULER.INSTANCE.task()
 def execute_octobot(task: Task):
-    if settings.TASKS_INPUTS_RSA_PRIVATE_KEY:
-        try:
-            decrypted_content = decrypt_task_content(task.content, task.metadata)
-        except Exception as e:
-            logger.error(f"Failed to decrypt content: {e}")
-            return {
-                TaskResultKeys.STATUS.value: "failed", 
-                TaskResultKeys.TASK.value: {"name": task.name}, 
-                TaskResultKeys.RESULT.value: {}, 
-                TaskResultKeys.ERROR.value: str(e)
+    with encrypted_task(task):
+        if task.type == TaskType.EXECUTE_ACTIONS.value:
+            # TODO start_octobot with actions
+            print(f"Executing actions with content: {task.content}...")
+            task.result = {
+                "state": {
+                    "orders": [], # WIP
+                }
             }
-    else:
-        decrypted_content = task.content
-
-    if task.type == TaskType.EXECUTE_ACTIONS.value:
-        # TODO start_octobot with actions
-        print(f"Executing actions with content: {decrypted_content}...")
-        return {
-            TaskResultKeys.STATUS.value: "done", 
-            TaskResultKeys.TASK.value: {"name": task.name}, 
-            TaskResultKeys.RESULT.value: {}, 
-            TaskResultKeys.ERROR.value: None
-        }
-    else:
-        raise ValueError(f"Invalid task type: {type}")
+        else:
+            raise ValueError(f"Invalid task type: {task.type}")
+    return {
+        TaskResultKeys.STATUS.value: TaskStatus.COMPLETED.value,
+        TaskResultKeys.RESULT.value: task.result, 
+        TaskResultKeys.METADATA.value: task.result_metadata,
+        TaskResultKeys.TASK.value: {"name": task.name},
+        TaskResultKeys.ERROR.value: None
+    }
 
 
 @SCHEDULER.INSTANCE.task()
 def stop_octobot(task: Task):
-    # TODO
-    return {TaskResultKeys.STATUS.value: "done", TaskResultKeys.TASK.value: {"name": task.name}, TaskResultKeys.RESULT.value: {}, TaskResultKeys.ERROR.value: None}
+    with encrypted_task(task):
+        # TODO
+        task.result = "ok"
+    return {
+        TaskResultKeys.STATUS.value: TaskStatus.COMPLETED.value,
+        TaskResultKeys.RESULT.value: task.result, 
+        TaskResultKeys.METADATA.value: task.result_metadata,
+        TaskResultKeys.TASK.value: {"name": task.name},
+        TaskResultKeys.ERROR.value: None
+    }
 
 def trigger_task(task: Task) -> bool:
     if task.type == TaskType.START_OCTOBOT.value:

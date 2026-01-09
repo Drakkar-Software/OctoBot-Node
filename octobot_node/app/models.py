@@ -53,10 +53,11 @@ class Task(BaseModel):
     name: typing.Optional[str] = None
     description: typing.Optional[str] = None
     content: typing.Optional[str] = None
-    metadata: typing.Optional[str] = None
+    content_metadata: typing.Optional[str] = None
     type: typing.Optional[str] = None
     status: typing.Optional[TaskStatus] = None
     result: typing.Optional[str] = None
+    result_metadata: typing.Optional[str] = None
     retries: typing.Optional[int] = 0
     retry_delay: typing.Optional[int] = 0
     priority: typing.Optional[int] = 0

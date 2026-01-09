@@ -21,3 +21,4 @@ class TaskResultKeys(enum.Enum):
     TASK = "task"
     RESULT = "result"
     ERROR = "error"
+    METADATA = "metadata"

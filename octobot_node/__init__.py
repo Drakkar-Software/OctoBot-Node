@@ -17,5 +17,5 @@
 
 PROJECT_NAME = "OctoBot-Node"
 AUTHOR = "Drakkar-Software"
-VERSION = "0.0.4"  # major.minor.revision
+VERSION = "0.0.5"  # major.minor.revision
 LONG_VERSION = f"{VERSION}"

@@ -18,10 +18,11 @@ export type Task = {
     name?: (string | null);
     description?: (string | null);
     content?: (string | null);
-    metadata?: (string | null);
+    content_metadata?: (string | null);
     type?: (string | null);
     status?: (TaskStatus | null);
     result?: (string | null);
+    result_metadata?: (string | null);
     retries?: (number | null);
     retry_delay?: (number | null);
     priority?: (number | null);
