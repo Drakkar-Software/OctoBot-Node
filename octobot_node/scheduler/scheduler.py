@@ -115,15 +115,18 @@ class Scheduler:
                 if result_obj is None:
                     description = f"Task completed (unable to parse result)"
                     status = TaskStatus.COMPLETED
+                    result = ""
+                    metadata = ""
                 elif isinstance(result_obj, HueyError):
-                    description = f"Task failed: {result_obj.error}"
+                    description = f"Task failed: {result_obj.metadata.get('error')}"
                     status = TaskStatus.FAILED
+                    result = ""
+                    metadata = ""
                 else:
                     description = f"Task completed"
                     status = TaskStatus.COMPLETED
-                
-                result = result_obj.get(TaskResultKeys.RESULT.value)
-                metadata = result_obj.get(TaskResultKeys.METADATA.value)
+                    result = result_obj.get(TaskResultKeys.RESULT.value)
+                    metadata = result_obj.get(TaskResultKeys.METADATA.value)
 
                 tasks.append({
                     "id": task_id,
