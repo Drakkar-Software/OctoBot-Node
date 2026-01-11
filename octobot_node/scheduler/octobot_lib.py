@@ -116,22 +116,23 @@ class OctoBotActionsJob:
         self.after_execution_state = None
 
     def _parse_description(self, description: str) -> dict:
-        try:
-            if isinstance(description, dict):
-                parsed_description = description
+        if isinstance(description, dict):
+            # normal Non-init case
+            parsed_description = description
+        else:
+            dict_description = json.loads(description)
+            if "state" in dict_description:
+                # there is a state, so it's a non init case
+                parsed_description = dict_description
             else:
-                # normal case: description is a JSON string
+                # normal init case: description is a JSON string: store it in params
                 parsed_description = {
-                    "params": json.loads(description)
+                    "params": dict_description
                 }
-        except json.JSONDecodeError:
-            # legacy case: description is a string of key-value pairs
-            parsed_description = {
-                "params": mini_octobot.parsers.key_val_to_dict(description),
-            }
-            parsed_description["params"]["SIMULATED_PORTFOLIO"] = {
-                "ETH": 1,
-            }
+                # TMP: add a simulated portfolio to the params
+                parsed_description["params"]["SIMULATED_PORTFOLIO"] = {
+                    "ETH": 1,
+                }
         return parsed_description
 
     async def run(self) -> OctoBotActionsJobResult:
