@@ -18,7 +18,7 @@ import csv
 import json
 import os
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import octobot_commons.cryptography as cryptography
 from octobot_node.scheduler.encryption.task_inputs import (
@@ -43,10 +43,10 @@ from octobot_node.scheduler.encryption.task_outputs import (
 COLUMN_NAME = "name"
 COLUMN_CONTENT = "content"
 COLUMN_TYPE = "type"
-CONTENT_SEPARATOR = ";"
+COLUMN_METADATA = "metadata"
 
 REQUIRED_KEYS = [COLUMN_NAME, COLUMN_TYPE]
-KEYS_OUTSIDE_CONTENT = [COLUMN_NAME, COLUMN_TYPE]
+KEYS_OUTSIDE_CONTENT = [COLUMN_NAME, COLUMN_TYPE, COLUMN_METADATA]
 
 DEFAULT_KEYS_FILE = "task_encryption_keys.json"
 
@@ -159,25 +159,41 @@ def build_content(
     keys_outside_content_indices: Dict[int, str],
     content_column_index: int
 ) -> str:
-    content_parts: List[str] = []
+    content_object: Dict[str, Any] = {}
     
+    # Add all columns (except keys outside content and the content column itself) to the JSON object
     for i in range(min(len(column_names), len(values))):
         if i not in keys_outside_content_indices and i != content_column_index:
             value = values[i].strip() if i < len(values) else ""
             if value:
                 column_name = column_names[i]
                 upper_key = column_name.upper()
-                content_parts.append(f"{upper_key}={value}")
+                
+                # Try to parse as JSON, otherwise use as string
+                try:
+                    parsed_value = json.loads(value)
+                    content_object[upper_key] = parsed_value
+                except (json.JSONDecodeError, ValueError):
+                    # If not valid JSON, use as string
+                    content_object[upper_key] = value
     
-    concatenated_content = CONTENT_SEPARATOR.join(content_parts)
+    # If there's a content column, try to parse it as JSON and merge it
     if content_column_index != -1 and content_column_index < len(values):
         content_column_value = values[content_column_index].strip()
         if content_column_value:
-            if concatenated_content:
-                return f"{concatenated_content}{CONTENT_SEPARATOR}{content_column_value}"
-            return content_column_value
+            try:
+                parsed_content = json.loads(content_column_value)
+                # Merge the parsed content into the content object
+                if isinstance(parsed_content, dict) and parsed_content is not None:
+                    content_object.update(parsed_content)
+                else:
+                    # If content is not an object, add it as a special key
+                    content_object["CONTENT"] = parsed_content
+            except (json.JSONDecodeError, ValueError):
+                # If not valid JSON, add as string
+                content_object["CONTENT"] = content_column_value
     
-    return concatenated_content
+    return json.dumps(content_object)
 
 
 def validate_row_has_required_keys(
@@ -213,18 +229,31 @@ def process_row(
             if value:
                 keys_outside_content_values[key] = value
     
-    final_content = build_content(
-        values,
-        column_names,
-        keys_outside_content_indices,
-        content_column_index
-    )
+    has_metadata = COLUMN_METADATA in keys_outside_content_values
     
-    return {
+    # For encrypted CSVs (with metadata), pass through content as-is (base64 string)
+    # For non-encrypted CSVs, build JSON content from columns
+    if has_metadata and content_column_index != -1:
+        final_content = values[content_column_index].strip() if content_column_index < len(values) else ""
+    else:
+        final_content = build_content(
+            values,
+            column_names,
+            keys_outside_content_indices,
+            content_column_index
+        )
+    
+    result = {
         COLUMN_NAME: keys_outside_content_values.get(COLUMN_NAME, ""),
         COLUMN_CONTENT: final_content,
         COLUMN_TYPE: keys_outside_content_values.get(COLUMN_TYPE, ""),
     }
+    
+    # Include metadata if present
+    if COLUMN_METADATA in keys_outside_content_values:
+        result[COLUMN_METADATA] = keys_outside_content_values[COLUMN_METADATA]
+    
+    return result
 
 
 def parse_csv(input_file_path: str) -> List[Dict[str, str]]:
