@@ -21,14 +21,37 @@ import logging
 import octobot_commons.list_util as list_util
 import octobot_commons.dataclasses
 
-import mini_octobot
-import mini_octobot.environment
-import mini_octobot.parsers
+try:
+    import mini_octobot
+    import mini_octobot.environment
+    import mini_octobot.parsers
 
-# Requires mini_octobot import and importable tentacles folder
+    # Requires mini_octobot import and importable tentacles folder
 
-# ensure environment is initialized
-mini_octobot.environment.initialize_environment(True)
+    # ensure environment is initialized
+    mini_octobot.environment.initialize_environment(True)
+
+except ImportError:
+    logging.getLogger("octobot_node.scheduler.octobot_lib").warning("OctoBot is not installed, OctoBot actions will not be available")
+    # mocks to allow import
+    class mini_octobot_mock:
+        class BotActionDetails:
+            def from_dict(self, *args, **kwargs):
+                raise NotImplementedError("BotActionDetails.from_dict is not implemented")
+        class SingleBotActionsJob:
+            def __init__(self, *args, **kwargs):
+                raise NotImplementedError("SingleBotActionsJob.__init__ is not implemented")
+            async def __aenter__(self):
+                raise NotImplementedError("SingleBotActionsJob.__aenter__ is not implemented")
+            async def __aexit__(self, *args, **kwargs):
+                raise NotImplementedError("SingleBotActionsJob.__aexit__ is not implemented")
+        class parsers:
+            class BotActionBundleParser:
+                def __init__(self, *args, **kwargs):
+                    raise NotImplementedError("BotActionBundleParser.__init__ is not implemented")
+                def parse(self, *args, **kwargs):
+                    raise NotImplementedError("BotActionBundleParser.parse is not implemented")
+    mini_octobot = mini_octobot_mock()
 
 
 @dataclasses.dataclass
