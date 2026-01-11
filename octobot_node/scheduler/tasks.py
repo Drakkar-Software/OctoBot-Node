@@ -14,11 +14,37 @@
 #  You should have received a copy of the GNU General Public
 #  License along with OctoBot. If not, see <https://www.gnu.org/licenses/>.
 
+import functools
+import datetime
+import asyncio
+import json
+
 from octobot_node.scheduler import SCHEDULER
 from octobot_node.scheduler.task_context import encrypted_task
 from octobot_node.app.models import Task, TaskType
 from octobot_node.app.enums import TaskResultKeys
 from octobot_node.app.models import TaskStatus
+
+import octobot_node.scheduler.octobot_lib as octobot_lib
+
+
+def async_task(func):
+    """
+    Decorator to ensure that the function it wraps is a non-async function that can then use asyncio.run(), e.g. Huey tasks.
+    Huey tasks will be called in one of 2 contexts: either they are the top-level function(ish) in the process, and there is no loop yet, or we are running tests in an an async context already and we need to re-use the current loop.
+    """
+
+    @functools.wraps(func)
+    def wrapper_decorator(*args, **kwargs):
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        task = loop.create_task(func(*args, **kwargs))
+        return loop.run_until_complete(task)
+
+    return wrapper_decorator
 
 
 @SCHEDULER.INSTANCE.task()
@@ -35,17 +61,34 @@ def start_octobot(task: Task):
     }
 
 
+def _reshedule_octobot_execution(task: Task, next_actions_description: octobot_lib.OctoBotActionsJobDescription):
+    task.content = json.dumps(next_actions_description.to_dict(include_default_values=False))
+    if next_actions_description.get_next_execution_time() == 0:
+        next_execution_time = datetime.datetime.now(tz=datetime.timezone.utc)
+    else:
+        next_execution_time = datetime.datetime.fromtimestamp(
+            next_actions_description.get_next_execution_time(),
+            tz=datetime.timezone.utc
+        )
+    execute_octobot.schedule(args=[task], eta=next_execution_time)
+
+
 @SCHEDULER.INSTANCE.task()
-def execute_octobot(task: Task):
+@async_task
+async def execute_octobot(task: Task):
     with encrypted_task(task):
         if task.type == TaskType.EXECUTE_ACTIONS.value:
-            # TODO start_octobot with actions
-            print(f"Executing actions with content: {task.content}...")
+            print(f"Executing actions with content: {task.content} ...")
+            result: octobot_lib.OctoBotActionsJobResult = await octobot_lib.OctoBotActionsJob(
+                task.content
+            ).run()
             task.result = {
                 "state": {
-                    "orders": [], # WIP
+                    "orders": result.get_created_orders()
                 }
             }
+            if result.next_actions_description:
+                _reshedule_octobot_execution(task, result.next_actions_description)
         else:
             raise ValueError(f"Invalid task type: {task.type}")
     return {

@@ -243,3 +243,4 @@ openapi.json
 
 *.db
 *.db-*
+/tentacles
