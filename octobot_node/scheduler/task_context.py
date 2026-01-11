@@ -23,7 +23,7 @@ from octobot_node.scheduler.encryption import decrypt_task_content, encrypt_task
 from octobot_node.app.core.config import settings
 from octobot_node.app.models import Task
 from octobot_node.app.enums import TaskResultKeys
-
+from octobot_node.scheduler.encryption import MissingMetadataError
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +42,8 @@ def encrypted_task(task: Task):
         # Decrypt content if encryption keys are configured
         if settings.TASKS_INPUTS_RSA_PRIVATE_KEY and settings.TASKS_INPUTS_ECDSA_PUBLIC_KEY:
             try:
+                if not task.content_metadata:
+                    raise MissingMetadataError("No metadata provided for content decryption")
                 decrypted_content = decrypt_task_content(task.content, task.content_metadata)
                 task.content = decrypted_content
             except Exception as e:
