@@ -15,6 +15,7 @@
 #  License along with OctoBot. If not, see <https://www.gnu.org/licenses/>.
 import argparse
 import sys
+import logging
 
 try:
     import uvicorn
@@ -30,6 +31,7 @@ from octobot_node import PROJECT_NAME, LONG_VERSION
 
 
 def start_server(args):
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)-8s %(name)-24s %(message)s")
     port = args.port or 8000
     
     # This must be done before the scheduler module is imported
