@@ -201,12 +201,21 @@ function processRow(
     values,
     keysOutsideContentIndices
   );
-  const finalContent = buildContent(
-    values,
-    columnNames,
-    keysOutsideContentIndices,
-    contentColumnIndex
-  );
+  const hasMetadata = keysOutsideContentValues.has(COLUMN_METADATA);
+  
+  let finalContent: string;
+  if (hasMetadata && contentColumnIndex !== -1) {
+    // For encrypted CSVs, pass through content as-is (base64 string)
+    finalContent = values[contentColumnIndex]?.trim() || "";
+  } else {
+    // For non-encrypted CSVs, build JSON content from columns
+    finalContent = buildContent(
+      values,
+      columnNames,
+      keysOutsideContentIndices,
+      contentColumnIndex
+    );
+  }
 
   return {
     name: keysOutsideContentValues.get(COLUMN_NAME) || "",
