@@ -116,13 +116,14 @@ class OctoBotActionsJob:
         self.after_execution_state = None
 
     def _parse_description(self, description: str) -> dict:
-        # TODO update this method once the decision about description is made (is it a dict or a string key=val; string)
         try:
             if isinstance(description, dict):
                 parsed_description = description
             else:
                 # normal case: description is a JSON string
-                parsed_description = json.loads(description)
+                parsed_description = {
+                    "params": json.loads(description)
+                }
         except json.JSONDecodeError:
             # legacy case: description is a string of key-value pairs
             parsed_description = {
