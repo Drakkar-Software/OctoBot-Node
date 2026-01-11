@@ -9,7 +9,6 @@ const COLUMN_NAME = "name";
 const COLUMN_CONTENT = "content";
 const COLUMN_TYPE = "type";
 const COLUMN_METADATA = "metadata";
-const CONTENT_SEPARATOR = ";";
 
 /**
  * List of column names that are required to be present in the CSV header.
@@ -123,29 +122,49 @@ function buildContent(
   keysOutsideContentIndices: Map<number, string>,
   contentColumnIndex: number
 ): string {
-  const contentParts: Array<string> = new Array<string>();
+  const contentObject: Record<string, unknown> = {};
+  
+  // Add all columns (except keys outside content and the content column itself) to the JSON object
   for (let i = 0; i < columnNames.length && i < values.length; i++) {
     if (!keysOutsideContentIndices.has(i) && i !== contentColumnIndex) {
       const value = values[i]?.trim();
       if (value !== undefined && value !== "") {
         const columnName = columnNames[i];
         const upperKey = columnName.toUpperCase();
-        contentParts.push(`${upperKey}=${value}`);
+        
+        // Try to parse as JSON, otherwise use as string
+        try {
+          const parsedValue = JSON.parse(value);
+          contentObject[upperKey] = parsedValue;
+        } catch {
+          // If not valid JSON, use as string
+          contentObject[upperKey] = value;
+        }
       }
     }
   }
 
-  const concatenatedContent = contentParts.join(CONTENT_SEPARATOR);
+  // If there's a content column, try to parse it as JSON and merge it
   if (contentColumnIndex !== -1) {
     const contentColumnValue = values[contentColumnIndex]?.trim();
     if (contentColumnValue) {
-      if (concatenatedContent) {
-        return `${concatenatedContent}${CONTENT_SEPARATOR}${contentColumnValue}`;
+      try {
+        const parsedContent = JSON.parse(contentColumnValue);
+        // Merge the parsed content into the content object
+        if (typeof parsedContent === "object" && parsedContent !== null && !Array.isArray(parsedContent)) {
+          Object.assign(contentObject, parsedContent);
+        } else {
+          // If content is not an object, add it as a special key
+          contentObject["CONTENT"] = parsedContent;
+        }
+      } catch {
+        // If not valid JSON, add as string
+        contentObject["CONTENT"] = contentColumnValue;
       }
-      return contentColumnValue;
     }
   }
-  return concatenatedContent;
+  
+  return JSON.stringify(contentObject);
 }
 
 function validateRowHasRequiredKeys(
