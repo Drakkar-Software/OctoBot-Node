@@ -17,19 +17,24 @@ import pytest
 
 import octobot_node.scheduler.octobot_lib as octobot_lib
 import octobot_commons.constants as common_constants
-import octobot_trading.constants
-import octobot_trading.errors
+RUN_TESTS = True
+try:
+    import octobot_trading.constants
+    import octobot_trading.errors
 
-import octobot_wrapper.keywords.internal.overrides.custom_action_trading_mode as custom_action_trading_mode
-import octobot_wrapper.keywords.internal.constants as kw_constants
-import octobot_wrapper.keywords.internal.enums as kw_enums
+    import octobot_wrapper.keywords.internal.overrides.custom_action_trading_mode as custom_action_trading_mode
+    import octobot_wrapper.keywords.internal.constants as kw_constants
+    import octobot_wrapper.keywords.internal.enums as kw_enums
+
+    BLOCKCHAIN = octobot_trading.constants.SIMULATED_BLOCKCHAIN_NETWORK
+except ImportError:
+    # tests will be skipped if octobot_trading or octobot_wrapper are not installed
+    RUN_TESTS = False
+    BLOCKCHAIN = "unavailable"
 
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
-
-
-BLOCKCHAIN = octobot_trading.constants.SIMULATED_BLOCKCHAIN_NETWORK
 
 
 @pytest.fixture
@@ -191,9 +196,21 @@ def multiple_action_bundle_with_wait(deposit_action, market_order_action, withdr
     all["params"]["ACTIONS"] = "deposit,wait,trade,wait,withdraw"
     return all
 
+
+def misses_required_octobot_lib_import():
+    try:
+        if not RUN_TESTS:
+            return "OctoBot dependencies are not installed"
+        import mini_octobot
+        return None
+    except ImportError:
+        return "octobot_lib is not installed"
+
 class TestOctoBotActionsJob:
 
     def setup_method(self):
+        if message := misses_required_octobot_lib_import():
+            pytest.skip(reason=message)
         octobot_trading.constants.ALLOW_FUNDS_TRANSFER = True
 
     def teardown_method(self):
