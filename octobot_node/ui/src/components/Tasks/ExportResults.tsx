@@ -36,7 +36,7 @@ const ExportResults = () => {
         return
       }
 
-      const headers = ["id", "name", "description", "status", "result", "completed_at"]
+      const headers = ["name", "status", "result", "result_metadata"]
       const rows: unknown[][] = []
       
       for (const task of tasksWithResults) {
@@ -51,9 +51,10 @@ const ExportResults = () => {
         }
         
         const row = [
-          task.id || "",
           task.name || "",
-          resultValue || ""
+          task.status || "",
+          resultValue || "No result found",
+          task.result_metadata
         ]
         
         rows.push(row)
