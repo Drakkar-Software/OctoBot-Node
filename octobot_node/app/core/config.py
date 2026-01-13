@@ -85,7 +85,6 @@ class Settings(BaseSettings):
 
     SENTRY_DSN: HttpUrl | None = None
     SCHEDULER_REDIS_URL: AnyUrl | None = None
-    USE_MEMORY_SCHEDULER: bool = False
     SCHEDULER_SQLITE_FILE: str = "tasks.db"
     SCHEDULER_WORKERS: int = 0  # 0 disables consumers, >0 enables consumers
     IS_MASTER_MODE: bool = False  # Enable master node mode
