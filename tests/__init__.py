@@ -14,7 +14,6 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-
-import octobot_node.constants
-# don't initialize the global scheduler in tests
-octobot_node.constants.INIT_GLOBAL_SCHEDULER = False
+import octobot_node.app.core.config
+# force memory scheduler for tests to avoid disk I/O or redis dependencies
+octobot_node.app.core.config.settings.USE_MEMORY_SCHEDULER = True
