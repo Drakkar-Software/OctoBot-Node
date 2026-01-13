@@ -13,7 +13,3 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-
-import octobot_node.app.core.config
-# force memory scheduler for tests to avoid disk I/O or redis dependencies
-octobot_node.app.core.config.settings.USE_MEMORY_SCHEDULER = True
