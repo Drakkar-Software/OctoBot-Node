@@ -1,6 +1,7 @@
 pytest>=7.1
 pytest-cov
 pytest-asyncio
+pytest-timeout
 
 mock>=4.0.1
 
