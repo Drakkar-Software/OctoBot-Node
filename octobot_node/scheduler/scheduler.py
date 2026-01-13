@@ -14,7 +14,7 @@
 #  You should have received a copy of the GNU General Public
 #  License along with OctoBot. If not, see <https://www.gnu.org/licenses/>.
 
-from huey import Huey, RedisHuey, SqliteHuey
+from huey import Huey, RedisHuey, SqliteHuey, MemoryHuey
 from huey.registry import Message
 from huey.utils import Error as HueyError
 from typing import Optional, Any
@@ -52,6 +52,10 @@ class Scheduler:
             ) if settings.REDIS_STORAGE_CERTS_PATH is not None else None
 
             self.INSTANCE = RedisHuey(DEFAULT_NAME, connection_pool=connection_pool) if connection_pool is not None else RedisHuey(DEFAULT_NAME, url=str(settings.SCHEDULER_REDIS_URL))
+        elif settings.USE_MEMORY_SCHEDULER:
+            # warning: this mode has no persistence, tasks will be lost when the process is stopped
+            self.logger.info("Initializing scheduler with memory backend")
+            self.INSTANCE = MemoryHuey(DEFAULT_NAME)
         else:
             self.logger.info(
                 "Initializing scheduler with sqlite backend at %s", settings.SCHEDULER_SQLITE_FILE

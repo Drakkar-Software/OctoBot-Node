@@ -18,6 +18,9 @@ import functools
 import datetime
 import asyncio
 import json
+import logging
+import time
+
 
 from octobot_node.scheduler import SCHEDULER
 from octobot_node.scheduler.task_context import encrypted_task
@@ -61,16 +64,20 @@ def start_octobot(task: Task):
     }
 
 
-def _reshedule_octobot_execution(task: Task, next_actions_description: octobot_lib.OctoBotActionsJobDescription):
+def _reshedule_octobot_execution(
+    task: Task, next_actions_description: octobot_lib.OctoBotActionsJobDescription
+):
     task.content = json.dumps(next_actions_description.to_dict(include_default_values=False))
-    if next_actions_description.get_next_execution_time() == 0:
-        next_execution_time = datetime.datetime.now(tz=datetime.timezone.utc)
+    next_execution_time = next_actions_description.get_next_execution_time()
+    now_time = time.time()
+    if next_execution_time == 0 or next_execution_time < now_time:
+        delay = 0
     else:
-        next_execution_time = datetime.datetime.fromtimestamp(
-            next_actions_description.get_next_execution_time(),
-            tz=datetime.timezone.utc
-        )
-    execute_octobot.schedule(args=[task], eta=next_execution_time)
+        delay = next_execution_time - now_time
+    logging.getLogger("octobot_node.scheduler.tasks").info(
+        f"Scheduling task '{task.name}' for execution in {delay} seconds"
+    )
+    return execute_octobot.schedule(args=[task], delay=delay)
 
 
 @SCHEDULER.INSTANCE.task()
@@ -78,14 +85,13 @@ def _reshedule_octobot_execution(task: Task, next_actions_description: octobot_l
 async def execute_octobot(task: Task):
     with encrypted_task(task):
         if task.type == TaskType.EXECUTE_ACTIONS.value:
-            print(f"Executing actions with content: {task.content} ...")
+            logging.getLogger("octobot_node.scheduler.tasks").info(f"Executing task '{task.name}' with content: {task.content} ...")
             result: octobot_lib.OctoBotActionsJobResult = await octobot_lib.OctoBotActionsJob(
                 task.content
             ).run()
             task.result = {
-                "state": {
-                    "orders": result.get_created_orders()
-                }
+                "orders": result.get_created_orders(),
+                "transfers": result.get_deposit_and_withdrawal_details(),
             }
             if result.next_actions_description:
                 _reshedule_octobot_execution(task, result.next_actions_description)
