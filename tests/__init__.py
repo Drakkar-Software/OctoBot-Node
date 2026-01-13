@@ -13,3 +13,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
+
+
+import octobot_node.constants
+# don't initialize the global scheduler in tests
+octobot_node.constants.INIT_GLOBAL_SCHEDULER = False

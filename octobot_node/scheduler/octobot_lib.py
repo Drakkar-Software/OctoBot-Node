@@ -25,7 +25,6 @@ try:
     import mini_octobot
     import mini_octobot.environment
     import mini_octobot.parsers
-
     # Requires mini_octobot import and importable tentacles folder
 
     # ensure environment is initialized
@@ -105,6 +104,16 @@ class OctoBotActionsJobResult:
             if action.result
         ]
         return list_util.flatten_list(order_lists) if order_lists else []
+    
+    def get_deposit_and_withdrawal_details(self) -> list[dict]:
+        if self.processed_actions is None:
+            raise ValueError("No bot actions were executed yet")
+        withdrawal_lists = [
+            action.result
+            for action in self.processed_actions
+            if action.result and isinstance(action.result, dict) and "network" in action.result
+        ]
+        return withdrawal_lists
 
 
 class OctoBotActionsJob:

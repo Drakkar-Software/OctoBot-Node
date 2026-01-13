@@ -157,6 +157,10 @@ def create_limit_and_cancel_order_action(limit_order_action, cancel_order_action
         "params": {
             **limit_order_action["params"],
             **cancel_order_action["params"],
+            **{
+                "MIN_DELAY": 0,
+                "MAX_DELAY": 0,
+            }
         }
     }
     all["params"]["SIMULATED_PORTFOLIO"] = {
@@ -188,6 +192,10 @@ def multiple_action_bundle_with_wait(deposit_action, market_order_action, withdr
             **deposit_action["params"],
             **market_order_action["params"],
             **withdraw_action["params"],
+            **{
+                "MIN_DELAY": 0.1,
+                "MAX_DELAY": 0.15,
+            }
         }
     }
     all["params"]["SIMULATED_PORTFOLIO"] = {

@@ -16,7 +16,6 @@
 
 import logging
 
-from huey import Huey
 from octobot_node.app.core.config import settings
 from octobot_node.scheduler.scheduler import Scheduler
 from octobot_node.scheduler.consumer import SchedulerConsumer
