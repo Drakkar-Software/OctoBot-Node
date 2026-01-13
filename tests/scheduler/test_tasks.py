@@ -25,6 +25,15 @@ import octobot_node.scheduler.octobot_lib
 import octobot_node.app.models
 import octobot_node.app.enums
 
+RUN_OCTOBOT_LIB_ELEMENTS_TESTS = True
+try:
+    import octobot_trading.constants
+
+    import octobot_wrapper.keywords.internal.overrides.custom_action_trading_mode as custom_action_trading_mode
+except ImportError:
+    # tests will be skipped if octobot_trading or octobot_wrapper are not installed
+    RUN_OCTOBOT_LIB_ELEMENTS_TESTS = False
+
 HUEY: huey.Huey = octobot_node.scheduler.SCHEDULER.INSTANCE # type: ignore
 
 @HUEY.task()
@@ -77,6 +86,12 @@ def mocked_octobot_action_job():
         yield mock_run
 
 
+@pytest.fixture
+def requires_octobot_lib_elements():
+    if not RUN_OCTOBOT_LIB_ELEMENTS_TESTS:
+        pytest.skip(reason="OctoBot dependencies are not installed")
+
+
 class TestHueyTasks:
 
 
@@ -96,7 +111,7 @@ class TestHueyTasks:
         result = async_add_numbers(1, 2)
         assert result.get() == 3
 
-    def test_execute_octobot_execution(self, schedule_task, mocked_octobot_action_job):
+    def test_execute_octobot_execution(self, schedule_task, mocked_octobot_action_job, requires_octobot_lib_elements):
         assert schedule_task.result is None
         result = octobot_node.scheduler.tasks.execute_octobot(schedule_task).get()
         assert schedule_task.result
@@ -107,7 +122,7 @@ class TestHueyTasks:
         })
 
     @pytest.mark.timeout(5)
-    def test_reshedule_octobot_execution_without_delay(self, schedule_task, mocked_octobot_action_job):
+    def test_reshedule_octobot_execution_without_delay(self, schedule_task, mocked_octobot_action_job, requires_octobot_lib_elements):
         next_actions_description = mock.Mock(
             get_next_execution_time=mock.Mock(return_value=0),
             to_dict=mock.Mock(return_value=json.loads(schedule_task.content))
@@ -122,7 +137,7 @@ class TestHueyTasks:
         assert mocked_octobot_action_job.call_count == 1
 
     @pytest.mark.timeout(5)
-    def test_reshedule_octobot_execution_with_delay(self, schedule_task, mocked_octobot_action_job):
+    def test_reshedule_octobot_execution_with_delay(self, schedule_task, mocked_octobot_action_job, requires_octobot_lib_elements):
         next_actions_description = mock.Mock(
             get_next_execution_time=mock.Mock(return_value=time.time() + 1),
             to_dict=mock.Mock(return_value=json.loads(schedule_task.content))
@@ -133,7 +148,7 @@ class TestHueyTasks:
         mocked_octobot_action_job.assert_not_called()
 
     @pytest.mark.timeout(5)
-    def test_reshedule_octobot_execution_with_delay_in_the_past(self, schedule_task, mocked_octobot_action_job):
+    def test_reshedule_octobot_execution_with_delay_in_the_past(self, schedule_task, mocked_octobot_action_job, requires_octobot_lib_elements):
         next_actions_description = mock.Mock(
             get_next_execution_time=mock.Mock(return_value=time.time() - 15),
             to_dict=mock.Mock(return_value=json.loads(schedule_task.content))
